@@ -1,0 +1,64 @@
+Build a modern 2025 website for a youth Islamic community called “AKINCILAR”.
+
+STYLE & DESIGN PHILOSOPHY:
+- Not minimal, not over-cyberpunk: find a balanced middle ground.
+- Contemporary, energetic, respectful, youth-oriented.
+- Avoid rainbow/neon overload and avoid corporate minimalism.
+- Visual identity should feel powerful, inspiring, and culturally rooted.
+
+COLOR PALETTE:
+- Primary: deep navy / night blue
+- Accent: warm gold / amber / copper
+- Secondary accent: turquoise or emerald green
+- Use gradients very subtly, never rainbow.
+- Dark-light contrast sections for rhythm.
+
+TYPOGRAPHY:
+- Strong modern sans-serif for headings (tech + human feel).
+- Clean readable font for body text.
+- Large bold hero typography with subtle text animations.
+- Avoid gothic, gaming, or futuristic fonts.
+
+LAYOUT & STRUCTURE:
+- Hero section with bold slogan and animated text reveal.
+- Smooth scroll-based section transitions.
+- Sections:
+  1. Hero (vision + movement)
+  2. Who we are (mission, identity)
+  3. Activities & events (cards with hover animation)
+  4. Knowledge & content (articles, learning)
+  5. Youth energy section (quotes, movement)
+  6. Call to action
+  7. Footer with clean symmetry
+
+ANIMATIONS & INTERACTIONS:
+- Use modern CSS animations:
+  - text reveal
+  - hover glow (very soft)
+  - magnetic buttons
+  - card lift on hover
+- Inspired by modern CSS animation patterns (Prismic / CodePen style).
+- Animations must feel smooth and premium, not flashy.
+
+ISLAMIC / OTTOMAN INFLUENCE:
+- Use subtle Islamic geometric patterns as background textures.
+- No obvious icons like mosques or swords.
+- Cultural depth through symmetry, geometry, and rhythm.
+- Ottoman spirit through structure and balance, not decoration.
+
+TECH STACK:
+- HTML, modern CSS, vanilla JS (no heavy frameworks).
+- Clean, readable, scalable code.
+- Responsive for mobile first.
+- Ready to be converted into WordPress later.
+
+TONE:
+- Youthful but serious.
+- Energetic but dignified.
+- Inspiring, not preachy.
+
+DELIVERABLE:
+- Complete homepage layout
+- CSS animations included
+- Clean modern UI
+- Visually strong but balanced design
