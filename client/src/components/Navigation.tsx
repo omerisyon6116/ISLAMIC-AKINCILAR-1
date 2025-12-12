@@ -19,6 +19,7 @@ export default function Navigation() {
   const navLinks = [
     { name: "KİMLİK", href: "#about" },
     { name: "GÖREVLER", href: "#activities" },
+    { name: "SAHA NOTLARI", href: "#blog" },
     { name: "VERİTABANI", href: "#knowledge" },
     { name: "DURUŞ", href: "#energy" },
   ];

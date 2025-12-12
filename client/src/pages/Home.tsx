@@ -2,6 +2,7 @@ import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
 import About from "@/components/About";
 import Activities from "@/components/Activities";
+import BlogSection from "@/components/BlogSection";
 import Knowledge from "@/components/Knowledge";
 import YouthEnergy from "@/components/YouthEnergy";
 import Footer from "@/components/Footer";
@@ -14,6 +15,7 @@ export default function Home() {
         <Hero />
         <About />
         <Activities />
+        <BlogSection />
         <Knowledge />
         <YouthEnergy />
       </main>
