@@ -128,6 +128,7 @@ export type SiteContentContextValue = {
   addEvent: (event: Omit<EventInfo, "id">) => void;
   updateEvent: (id: string, updates: Partial<EventInfo>) => void;
   removeEvent: (id: string) => void;
+  resetContent: () => void;
 };
 
 const SiteContentContext = createContext<SiteContentContextValue | undefined>(undefined);
@@ -188,6 +189,12 @@ export function SiteContentProvider({ children }: { children: React.ReactNode })
         ...prev,
         events: prev.events.filter((event) => event.id !== id),
       }));
+    },
+    resetContent: () => {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+      setContent(defaultContent);
     },
   }), [content]);
 

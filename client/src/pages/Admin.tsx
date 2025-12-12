@@ -24,7 +24,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { CallToAction, EventInfo, useSiteContent } from "@/lib/site-content";
 import { Link } from "wouter";
-import { ArrowLeft, Edit2, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Edit2, Plus, RotateCw, Save, Trash2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const emptyEvent: Omit<EventInfo, "id"> = {
   title: "",
@@ -35,12 +36,13 @@ const emptyEvent: Omit<EventInfo, "id"> = {
 };
 
 export default function Admin() {
-  const { content, updateHeroCta, updateNavCta, addEvent, updateEvent, removeEvent } =
+  const { content, updateHeroCta, updateNavCta, addEvent, updateEvent, removeEvent, resetContent } =
     useSiteContent();
   const [ctaDrafts, setCtaDrafts] = useState<CallToAction[]>(content.heroCtas);
   const [navDraft, setNavDraft] = useState<CallToAction>(content.navCta);
   const [newEvent, setNewEvent] = useState<Omit<EventInfo, "id">>(emptyEvent);
   const [editingEvent, setEditingEvent] = useState<EventInfo | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => setCtaDrafts(content.heroCtas), [content.heroCtas]);
   useEffect(() => setNavDraft(content.navCta), [content.navCta]);
@@ -52,18 +54,50 @@ export default function Admin() {
   }, [content.events.length]);
 
   const handleSaveCtas = () => {
+    const hasEmpty = ctaDrafts.some((cta) => !cta.label.trim() || !cta.href.trim());
+    if (hasEmpty) {
+      toast({
+        title: "Eksik alan var",
+        description: "Hero butonları için hem yazı hem bağlantı doldurulmalı.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     ctaDrafts.forEach((cta) => updateHeroCta(cta.id, cta));
+    toast({ title: "Hero butonları güncellendi", description: "Değişiklikler kaydedildi." });
   };
 
   const handleSaveNav = () => {
+    if (!navDraft.label.trim() || !navDraft.href.trim()) {
+      toast({
+        title: "Navigasyon butonu boş olamaz",
+        description: "Başlık ve bağlantı girildiğinden emin olun.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     updateNavCta(navDraft);
+    toast({ title: "Navigasyon güncellendi", description: "Üst menü butonu kaydedildi." });
   };
 
   const handleAddEvent = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!newEvent.title.trim()) return;
+    if (!newEvent.title.trim()) {
+      toast({
+        title: "Başlık gerekli",
+        description: "Etkinlik adı olmadan kart oluşturulamaz.",
+        variant: "destructive",
+      });
+      return;
+    }
     addEvent(newEvent);
     setNewEvent(emptyEvent);
+    toast({
+      title: "Etkinlik eklendi",
+      description: `${newEvent.title} listede yayınlandı.`,
+    });
   };
 
   const handleUpdateEvent = (event: React.FormEvent<HTMLFormElement>) => {
@@ -71,6 +105,24 @@ export default function Admin() {
     if (!editingEvent) return;
     updateEvent(editingEvent.id, editingEvent);
     setEditingEvent(null);
+    toast({ title: "Etkinlik güncellendi" });
+  };
+
+  const handleRemoveEvent = (id: string, title: string) => {
+    removeEvent(id);
+    toast({
+      title: "Etkinlik silindi",
+      description: `${title} listeden kaldırıldı.`,
+    });
+  };
+
+  const handleReset = () => {
+    resetContent();
+    setEditingEvent(null);
+    toast({
+      title: "Varsayılan içerik yüklendi",
+      description: "Butonlar ve etkinlikler ilk haline döndürüldü.",
+    });
   };
 
   return (
@@ -97,11 +149,16 @@ export default function Admin() {
 
       <main className="container mx-auto px-6 py-10 space-y-8">
         <Card className="border-primary/30 bg-card/60">
-          <CardHeader>
-            <CardTitle>Buton Yönetimi</CardTitle>
-            <CardDescription>
-              Hero bölümündeki ve navigasyondaki çağrı butonlarının yazılarını ve bağlantılarını düzenle.
-            </CardDescription>
+          <CardHeader className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div className="space-y-1">
+              <CardTitle>Buton Yönetimi</CardTitle>
+              <CardDescription>
+                Hero bölümündeki ve navigasyondaki çağrı butonlarının yazılarını ve bağlantılarını düzenle.
+              </CardDescription>
+            </div>
+            <Button variant="ghost" className="gap-2" onClick={handleReset}>
+              <RotateCw className="w-4 h-4" /> Varsayılanlara döndür
+            </Button>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2">
@@ -290,7 +347,7 @@ export default function Admin() {
                             variant="destructive"
                             size="sm"
                             className="gap-2"
-                            onClick={() => removeEvent(event.id)}
+                            onClick={() => handleRemoveEvent(event.id, event.title)}
                           >
                             <Trash2 className="w-4 h-4" /> Sil
                           </Button>
