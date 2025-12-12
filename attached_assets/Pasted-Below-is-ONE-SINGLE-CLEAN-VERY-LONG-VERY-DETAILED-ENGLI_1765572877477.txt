@@ -1,0 +1,425 @@
+Below is ONE SINGLE, CLEAN, VERY LONG, VERY DETAILED, ENGLISH “MASTER PROMPT” that merges EVERYTHING we built step-by-step.
+
+This is not a normal prompt.
+This is a platform-level / enterprise-grade / final boss prompt.
+
+You can paste this directly into Replit / Cursor / Copilot / any AI coding agent.
+
+⸻
+
+🚀 MASTER ULTRA PROMPT (ENGLISH)
+
+Enterprise Community Platform + CMS + Events + Forum + DM + Groups + Multi-Tenant + Security + PWA
+
+⸻
+
+🎭 ROLE
+
+You are a Principal Full-Stack Platform Architect & Security Engineer with 10+ years of experience.
+
+You build:
+	•	production-ready
+	•	scalable
+	•	secure
+	•	maintainable
+	•	enterprise-grade platforms
+
+You do NOT build demos, mockups, or half-finished systems.
+
+⸻
+
+🛑 ABSOLUTE RULES (NON-NEGOTIABLE)
+	1.	❌ DO NOT change the existing UI / theme / layout / visual style
+	2.	❌ NO LocalStorage, NO mock data
+	3.	✅ Everything must be real, persistent, database-backed
+	4.	✅ All features must be fully functional
+	5.	✅ Security is mandatory, not optional
+	6.	✅ Database migrations + seed data are required
+	7.	✅ Clean architecture (routes → services → db)
+	8.	✅ Code must be readable and maintainable
+
+⸻
+
+🧠 PRODUCT VISION
+
+This project is NOT just a website.
+
+It is a long-term, enterprise-ready COMMUNITY PLATFORM for a youth organization
+(similar in spirit to Reddit + Discord + CMS combined).
+
+The platform must support:
+	•	content publishing
+	•	events
+	•	discussions
+	•	private messaging
+	•	moderation
+	•	growth into multiple communities (multi-tenant)
+
+⸻
+
+🏗️ TECH STACK (EXPECTED)
+	•	Frontend: React + TypeScript (existing UI preserved)
+	•	Backend: Node.js + Express
+	•	Database: PostgreSQL
+	•	ORM & Migrations: Drizzle or Prisma (choose one, use migrations)
+	•	Auth: HttpOnly Cookie Sessions (preferred) OR JWT + refresh cookies
+	•	Validation: Zod (mandatory)
+	•	Security: CSRF, rate-limit, sanitization, RBAC
+	•	Realtime: WebSocket (Socket.IO or ws)
+	•	Search: PostgreSQL Full-Text Search
+	•	Uploads: Local dev + S3-compatible adapter
+	•	PWA: Service Worker + Push Notifications
+
+⸻
+
+🌍 MULTI-TENANT ARCHITECTURE (CORE REQUIREMENT)
+
+The platform must support multiple communities (tenants) using the same codebase.
+
+Tenant examples:
+	•	City-based branches
+	•	Different organizations
+	•	Separate communities
+
+Tenant identification:
+	•	URL path: /:tenantSlug/... (preferred)
+
+⸻
+
+🗂️ DATABASE DESIGN (COMPLETE)
+
+🏢 Tenants
+
+tenants
+- id
+- name
+- slug (unique)
+- plan (free | pro | enterprise)
+- status (active | suspended)
+- created_at
+
+tenant_settings
+- tenant_id
+- site_title
+- hero_title
+- hero_subtitle
+- contact_email
+- socials (json)
+- default_language
+- updated_at
+
+tenant_members
+- tenant_id
+- user_id
+- role (owner | admin | moderator | editor | member)
+- joined_at
+
+
+⸻
+
+👤 Users & Security
+
+users
+- id
+- username (unique)
+- display_name
+- email (unique)
+- password_hash
+- role
+- status (active | suspended | banned)
+- bio
+- avatar_url
+- trust_level
+- reputation_points
+- last_login_at
+- created_at
+
+user_sessions
+- id
+- user_id
+- token_hash
+- ip
+- user_agent
+- expires_at
+
+
+⸻
+
+📝 CMS (Blog & Pages)
+
+posts
+- id
+- tenant_id
+- author_id
+- title
+- slug
+- excerpt
+- content
+- cover_image
+- status (draft | scheduled | published)
+- published_at
+- seo_title
+- seo_description
+
+
+⸻
+
+📅 Events
+
+events
+- id
+- tenant_id
+- title
+- description
+- location
+- event_date
+- capacity
+
+event_registrations
+- id
+- event_id
+- user_id (nullable)
+- name
+- email
+- status
+
+
+⸻
+
+💬 FORUM SYSTEM (ADVANCED)
+
+Categories
+
+forum_categories
+- id
+- tenant_id
+- name
+- slug
+- is_locked
+
+Threads
+
+forum_threads
+- id
+- tenant_id
+- category_id
+- author_id
+- title
+- slug
+- body
+- is_pinned
+- is_locked
+- views_count
+- replies_count
+- last_activity_at
+
+Replies
+
+forum_replies
+- id
+- thread_id
+- author_id
+- body
+- is_hidden
+
+Reactions / Likes
+
+forum_reactions
+- user_id
+- target_type (thread | reply)
+- target_id
+
+Subscriptions & Notifications
+
+forum_subscriptions
+- user_id
+- thread_id
+
+notifications
+- user_id
+- type (reply | mention | like | dm | mod_action)
+- payload (json)
+- is_read
+
+
+⸻
+
+📨 DIRECT MESSAGES (DM)
+
+dm_threads
+- id
+- tenant_id
+- created_at
+
+dm_participants
+- thread_id
+- user_id
+- last_read_at
+
+dm_messages
+- id
+- thread_id
+- sender_id
+- body
+- created_at
+
+
+⸻
+
+👥 GROUPS / ROOMS
+
+groups
+- id
+- tenant_id
+- name
+- slug
+- visibility (public | private)
+- owner_id
+
+group_members
+- group_id
+- user_id
+- role
+
+
+⸻
+
+🛡️ MODERATION & SAFETY
+
+forum_reports
+- reporter_id
+- target_type
+- target_id
+- reason
+- status
+
+moderation_logs
+- actor_id
+- action_type
+- target_type
+- target_id
+- created_at
+
+Features:
+	•	report queue
+	•	auto-hide on report threshold
+	•	mute / suspend / ban
+	•	trust-level-based rate limits
+	•	slow-mode threads
+
+⸻
+
+🔐 AUTHENTICATION & SECURITY
+	•	Register / Login / Logout
+	•	Email verification
+	•	Password reset
+	•	Optional 2FA (TOTP)
+	•	CSRF tokens
+	•	Rate limiting (auth + posting)
+	•	Role-based & permission-based access
+	•	Audit logging for admin/mod actions
+
+⸻
+
+🔔 REAL-TIME & NOTIFICATIONS
+	•	WebSocket:
+	•	new replies
+	•	DMs
+	•	notifications
+	•	Notification preferences per user
+	•	Mention detection (@username)
+
+⸻
+
+🔎 SEARCH (FULL-TEXT)
+	•	PostgreSQL FTS
+	•	Highlighted results
+	•	Filter by:
+	•	forum
+	•	posts
+	•	events
+	•	Tenant-scoped search only
+
+⸻
+
+📱 PWA + PUSH
+	•	Service Worker
+	•	Offline shell caching
+	•	Push notifications:
+	•	replies
+	•	mentions
+	•	DMs
+	•	event reminders
+	•	VAPID keys + subscriptions table
+
+⸻
+
+🧑‍💼 ADMIN PANEL (ENTERPRISE)
+
+Admin features:
+	•	Content management (posts/events)
+	•	Scheduled publishing
+	•	Forum moderation queue
+	•	User management (roles, bans)
+	•	Tenant settings
+	•	Invitations
+	•	Data export (CSV/JSON)
+	•	Audit logs
+	•	Auto-moderation rules
+
+⸻
+
+📈 OBSERVABILITY & OPS
+	•	Structured logging
+	•	Health endpoint /api/health
+	•	Metrics counters (logins, posts, replies)
+	•	Error handling with request IDs
+	•	.env.example
+	•	Seed scripts:
+	•	admin user
+	•	default tenant
+	•	categories
+
+⸻
+
+🧩 IMPLEMENTATION ORDER (MANDATORY)
+	1.	Database migrations + seed
+	2.	Auth & sessions
+	3.	CMS (posts/events)
+	4.	Forum core
+	5.	Notifications & subscriptions
+	6.	DM + Groups
+	7.	Search
+	8.	PWA + Push
+	9.	Admin & moderation
+	10.	Security hardening + cleanup
+
+Each step must leave the app fully working.
+
+⸻
+
+🏁 FINAL RESULT
+
+At the end, this repository must represent:
+
+A production-ready, enterprise-grade, multi-tenant community platform
+that can be used for years, scaled, audited, moderated, and trusted.
+
+⸻
+
+🔥 OPTIONAL FINAL ADD-ONS (ONLY IF CLEANLY POSSIBLE)
+	•	Google SSO
+	•	Stripe plans & quotas
+	•	Feature flags
+	•	A/B testing
+	•	Content approval workflows
+
+⸻
+
+If you want, next I can:
+	•	compress this for Cursor
+	•	split into Backend-only / Frontend-only prompts
+	•	turn it into a technical specification PDF
+	•	convert it into a startup-ready SaaS blueprint
+
+Just say the word.
