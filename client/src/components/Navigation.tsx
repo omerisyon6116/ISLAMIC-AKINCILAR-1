@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
-import { Link } from "wouter";
-import { Menu, X, Terminal } from "lucide-react";
+import { Link, useLocation } from "wouter";
+import { Menu, X, Terminal, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useSiteContent } from "@/lib/site-content";
+import { useAuth } from "@/lib/auth";
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { content } = useSiteContent();
+  const { user, isAuthenticated, logout } = useAuth();
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -17,6 +20,11 @@ export default function Navigation() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const handleLogout = async () => {
+    await logout();
+    setLocation("/");
+  };
 
   const navLinks = [
     { name: "KİMLİK", href: "#about" },
@@ -36,18 +44,15 @@ export default function Navigation() {
       )}
     >
       <div className="container mx-auto px-6 flex items-center justify-between">
-        <Link href="/">
-          <a className="flex items-center gap-2 group">
-            <div className="w-8 h-8 bg-primary/20 border border-primary flex items-center justify-center group-hover:bg-primary group-hover:text-black transition-colors">
-              <Terminal className="w-5 h-5" />
-            </div>
-            <span className="text-2xl font-bold font-heading tracking-widest text-foreground group-hover:text-glow transition-all">
-              AKINCILAR
-            </span>
-          </a>
+        <Link href="/" className="flex items-center gap-2 group">
+          <div className="w-8 h-8 bg-primary/20 border border-primary flex items-center justify-center group-hover:bg-primary group-hover:text-black transition-colors">
+            <Terminal className="w-5 h-5" />
+          </div>
+          <span className="text-2xl font-bold font-heading tracking-widest text-foreground group-hover:text-glow transition-all">
+            AKINCILAR
+          </span>
         </Link>
 
-        {/* Desktop Nav */}
         <div className="hidden md:flex items-center space-x-1">
           {navLinks.map((link) => (
             <a
@@ -58,26 +63,48 @@ export default function Navigation() {
               {link.name}
             </a>
           ))}
-          <Link href="/admin">
-            <a className="px-5 py-2 text-xs font-mono tracking-widest text-secondary border border-secondary/40 hover:border-secondary hover:bg-secondary/10 transition-all clip-path-cyber">
+          
+          {isAuthenticated && (user?.role === "superadmin" || user?.role === "admin" || user?.role === "moderator") && (
+            <Link 
+              href="/admin"
+              className="px-5 py-2 text-xs font-mono tracking-widest text-secondary border border-secondary/40 hover:border-secondary hover:bg-secondary/10 transition-all clip-path-cyber"
+            >
               ADMIN PANEL
-            </a>
-          </Link>
-          <Button asChild className="ml-4 bg-secondary text-black hover:bg-white font-bold tracking-widest clip-path-cyber rounded-none border-none">
-            <a href={content.navCta.href}>{content.navCta.label}</a>
-          </Button>
+            </Link>
+          )}
+
+          {isAuthenticated ? (
+            <div className="flex items-center gap-2 ml-4">
+              <span className="text-xs font-mono text-muted-foreground flex items-center gap-1">
+                <User className="w-3 h-3" />
+                {user?.displayName || user?.username}
+              </span>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={handleLogout}
+                className="gap-1 text-xs font-mono"
+                data-testid="button-logout"
+              >
+                <LogOut className="w-3 h-3" /> ÇIKIŞ
+              </Button>
+            </div>
+          ) : (
+            <Button asChild className="ml-4 bg-secondary text-black hover:bg-white font-bold tracking-widest clip-path-cyber rounded-none border-none">
+              <Link href="/login" data-testid="button-login-nav">{content.navCta.label}</Link>
+            </Button>
+          )}
         </div>
 
-        {/* Mobile Menu Button */}
         <button
           className="md:hidden text-primary border border-primary/30 p-2 bg-black/50"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          data-testid="button-mobile-menu"
         >
           {isMobileMenuOpen ? <X /> : <Menu />}
         </button>
       </div>
 
-      {/* Mobile Nav */}
       {isMobileMenuOpen && (
         <div className="md:hidden absolute top-full left-0 right-0 bg-black/95 border-b border-primary/30 p-6 flex flex-col space-y-2 animate-in slide-in-from-top-5 backdrop-blur-xl">
           {navLinks.map((link) => (
@@ -90,14 +117,38 @@ export default function Navigation() {
               {">"} {link.name}
             </a>
           ))}
-          <Link href="/admin">
-            <a className="text-lg font-mono text-secondary hover:text-white hover:bg-secondary/20 p-4 border-l-2 border-transparent hover:border-secondary transition-all" onClick={() => setIsMobileMenuOpen(false)}>
+          
+          {isAuthenticated && (user?.role === "superadmin" || user?.role === "admin" || user?.role === "moderator") && (
+            <Link 
+              href="/admin"
+              className="text-lg font-mono text-secondary hover:text-white hover:bg-secondary/20 p-4 border-l-2 border-transparent hover:border-secondary transition-all"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
               {">"} ADMIN PANEL
-            </a>
-          </Link>
-          <Button asChild className="w-full mt-4 bg-secondary text-black font-bold font-heading tracking-widest rounded-none">
-            <a href={content.navCta.href}>{content.navCta.label}</a>
-          </Button>
+            </Link>
+          )}
+
+          {isAuthenticated ? (
+            <div className="pt-4 space-y-2">
+              <p className="text-xs font-mono text-muted-foreground px-4">
+                Giriş yapan: {user?.displayName || user?.username}
+              </p>
+              <button
+                onClick={() => {
+                  handleLogout();
+                  setIsMobileMenuOpen(false);
+                }}
+                className="w-full text-lg font-mono text-destructive hover:text-white hover:bg-destructive/20 p-4 border-l-2 border-transparent hover:border-destructive transition-all text-left"
+                data-testid="button-mobile-logout"
+              >
+                {">"} ÇIKIŞ YAP
+              </button>
+            </div>
+          ) : (
+            <Button asChild className="w-full mt-4 bg-secondary text-black font-bold font-heading tracking-widest rounded-none">
+              <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>{content.navCta.label}</Link>
+            </Button>
+          )}
         </div>
       )}
     </nav>

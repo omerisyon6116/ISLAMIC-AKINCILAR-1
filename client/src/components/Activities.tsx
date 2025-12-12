@@ -18,10 +18,11 @@ export default function Activities() {
             </h2>
             <div className="h-1 w-32 bg-primary shadow-[0_0_10px_#00f3ff]" />
           </div>
-          <Link href="/admin">
-            <a className="text-primary hover:text-white font-mono text-sm border border-primary/30 px-6 py-2 hover:bg-primary/20 transition-all clip-path-cyber flex items-center gap-2">
-              TAKVİMİ YÖNET <ArrowUpRight className="w-4 h-4" />
-            </a>
+          <Link 
+            href="/admin"
+            className="text-primary hover:text-white font-mono text-sm border border-primary/30 px-6 py-2 hover:bg-primary/20 transition-all clip-path-cyber flex items-center gap-2"
+          >
+            TAKVİMİ YÖNET <ArrowUpRight className="w-4 h-4" />
           </Link>
         </div>
 
@@ -29,9 +30,7 @@ export default function Activities() {
           <div className="bg-card/40 border border-primary/20 p-8 text-center text-muted-foreground font-mono">
             Henüz etkinlik eklenmedi. İlk etkinliğini oluşturmak için
             {" "}
-            <Link href="/admin">
-              <a className="text-primary hover:text-white underline underline-offset-4">admin panelini</a>
-            </Link>
+            <Link href="/admin" className="text-primary hover:text-white underline underline-offset-4">admin panelini</Link>
             {" "}
             ziyaret et.
           </div>
