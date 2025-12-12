@@ -6,13 +6,13 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: 'Inter', sans-serif;
-  --font-heading: 'Outfit', sans-serif;
+  --font-sans: 'Rajdhani', sans-serif;
+  --font-heading: 'Orbitron', sans-serif;
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
 
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -41,95 +41,64 @@
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
-
-  --color-chart-1: hsl(var(--chart-1));
-  --color-chart-2: hsl(var(--chart-2));
-  --color-chart-3: hsl(var(--chart-3));
-  --color-chart-4: hsl(var(--chart-4));
-  --color-chart-5: hsl(var(--chart-5));
-
-  --color-sidebar: hsl(var(--sidebar));
-  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
-  --color-sidebar-primary: hsl(var(--sidebar-primary));
-  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
-  --color-sidebar-accent: hsl(var(--sidebar-accent));
-  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
-  --color-sidebar-border: hsl(var(--sidebar-border));
-  --color-sidebar-ring: hsl(var(--sidebar-ring));
 }
 
 :root {
-  /* Deep Navy / Night Blue Base */
-  --background: 222 47% 11%;
-  --foreground: 210 40% 98%;
+  /* Deep Cyber Void */
+  --background: 230 40% 5%; /* Almost black blue */
+  --foreground: 180 100% 90%; /* Pale Cyan */
 
-  /* Darker Navy for cards/sections */
-  --card: 222 47% 13%;
-  --card-foreground: 210 40% 98%;
+  /* Cyber Card */
+  --card: 230 40% 8%;
+  --card-foreground: 180 100% 90%;
 
-  --popover: 222 47% 13%;
-  --popover-foreground: 210 40% 98%;
+  --popover: 230 40% 8%;
+  --popover-foreground: 180 100% 90%;
 
-  /* Warm Gold / Amber */
-  --primary: 35 90% 50%;
-  --primary-foreground: 222 47% 11%;
+  /* Neon Cyan */
+  --primary: 180 100% 50%;
+  --primary-foreground: 230 60% 5%;
 
-  /* Turquoise / Emerald */
-  --secondary: 170 70% 45%;
-  --secondary-foreground: 222 47% 11%;
+  /* Electric Amber/Gold */
+  --secondary: 40 100% 50%;
+  --secondary-foreground: 230 60% 5%;
 
-  --muted: 217 33% 17%;
-  --muted-foreground: 215 20% 65%;
+  --muted: 230 30% 15%;
+  --muted-foreground: 230 20% 60%;
 
-  --accent: 35 90% 50%;
-  --accent-foreground: 222 47% 11%;
+  --accent: 280 100% 60%; /* Cyber Purple */
+  --accent-foreground: 210 40% 98%;
 
-  --destructive: 0 62% 30%;
+  --destructive: 0 100% 50%;
   --destructive-foreground: 210 40% 98%;
 
-  --border: 217 33% 20%;
-  --input: 217 33% 20%;
-  --ring: 35 90% 50%;
+  --border: 180 100% 20%;
+  --input: 180 100% 15%;
+  --ring: 180 100% 50%;
 
-  --radius: 0.5rem;
-
-  --chart-1: 35 90% 50%;
-  --chart-2: 170 70% 45%;
-  --chart-3: 199 89% 48%;
-  --chart-4: 280 65% 60%;
-  --chart-5: 340 75% 55%;
-
-  --sidebar: 222 47% 10%;
-  --sidebar-foreground: 210 40% 98%;
-  --sidebar-primary: 35 90% 50%;
-  --sidebar-primary-foreground: 222 47% 11%;
-  --sidebar-accent: 217 33% 17%;
-  --sidebar-accent-foreground: 210 40% 98%;
-  --sidebar-border: 217 33% 20%;
-  --sidebar-ring: 35 90% 50%;
+  --radius: 0.25rem;
 }
 
 .dark {
-  /* Inherit same variables since the design is dark-themed by default */
-  --background: 222 47% 11%;
-  --foreground: 210 40% 98%;
-  --card: 222 47% 13%;
-  --card-foreground: 210 40% 98%;
-  --popover: 222 47% 13%;
-  --popover-foreground: 210 40% 98%;
-  --primary: 35 90% 50%;
-  --primary-foreground: 222 47% 11%;
-  --secondary: 170 70% 45%;
-  --secondary-foreground: 222 47% 11%;
-  --muted: 217 33% 17%;
-  --muted-foreground: 215 20% 65%;
-  --accent: 35 90% 50%;
-  --accent-foreground: 222 47% 11%;
-  --destructive: 0 62% 30%;
+  --background: 230 40% 5%;
+  --foreground: 180 100% 90%;
+  --card: 230 40% 8%;
+  --card-foreground: 180 100% 90%;
+  --popover: 230 40% 8%;
+  --popover-foreground: 180 100% 90%;
+  --primary: 180 100% 50%;
+  --primary-foreground: 230 60% 5%;
+  --secondary: 40 100% 50%;
+  --secondary-foreground: 230 60% 5%;
+  --muted: 230 30% 15%;
+  --muted-foreground: 230 20% 60%;
+  --accent: 280 100% 60%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 100% 50%;
   --destructive-foreground: 210 40% 98%;
-  --border: 217 33% 20%;
-  --input: 217 33% 20%;
-  --ring: 35 90% 50%;
+  --border: 180 100% 20%;
+  --input: 180 100% 15%;
+  --ring: 180 100% 50%;
 }
 
 @layer base {
@@ -138,21 +107,43 @@
   }
   body {
     @apply font-sans antialiased bg-background text-foreground;
+    background-image: 
+      linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-heading tracking-tight;
+    @apply font-heading uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-primary via-white to-secondary;
   }
 }
 
-/* Custom Utilities for Visual Flair */
 @layer utilities {
   .text-glow {
-    text-shadow: 0 0 20px hsla(35, 90%, 50%, 0.3);
+    text-shadow: 0 0 10px hsla(180, 100%, 50%, 0.5), 0 0 20px hsla(180, 100%, 50%, 0.3);
   }
-  .glass-card {
-    @apply bg-card/60 backdrop-blur-md border border-white/10;
+  .border-glow {
+    box-shadow: 0 0 10px hsla(180, 100%, 50%, 0.2), inset 0 0 10px hsla(180, 100%, 50%, 0.1);
   }
-  .magnetic-btn {
-    transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  .cyber-card {
+    @apply bg-black/40 backdrop-blur-xl border border-primary/30 relative overflow-hidden;
+  }
+  .cyber-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 2px;
+    height: 100%;
+    background: linear-gradient(to bottom, transparent, theme('colors.primary'), transparent);
+    opacity: 0.5;
+  }
+  .clip-path-cyber {
+    clip-path: polygon(
+      0 0,
+      100% 0,
+      100% calc(100% - 20px),
+      calc(100% - 20px) 100%,
+      0 100%
+    );
   }
 }

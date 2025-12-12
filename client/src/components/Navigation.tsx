@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -17,48 +17,52 @@ export default function Navigation() {
   }, []);
 
   const navLinks = [
-    { name: "Who We Are", href: "#about" },
-    { name: "Activities", href: "#activities" },
-    { name: "Knowledge", href: "#knowledge" },
-    { name: "Youth Energy", href: "#energy" },
+    { name: "IDENTITY", href: "#about" },
+    { name: "MISSIONS", href: "#activities" },
+    { name: "DATABASE", href: "#knowledge" },
+    { name: "ENERGY", href: "#energy" },
   ];
 
   return (
     <nav
       className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b border-transparent",
+        "fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b",
         isScrolled
-          ? "bg-background/80 backdrop-blur-md border-white/10 py-4"
-          : "bg-transparent py-6"
+          ? "bg-background/90 backdrop-blur-md border-primary/30 py-3 shadow-[0_5px_30px_rgba(0,243,255,0.1)]"
+          : "bg-transparent border-transparent py-6"
       )}
     >
       <div className="container mx-auto px-6 flex items-center justify-between">
         <Link href="/">
-          <a className="text-2xl font-bold font-heading tracking-tight text-foreground hover:text-primary transition-colors">
-            AKINCILAR
+          <a className="flex items-center gap-2 group">
+            <div className="w-8 h-8 bg-primary/20 border border-primary flex items-center justify-center group-hover:bg-primary group-hover:text-black transition-colors">
+              <Terminal className="w-5 h-5" />
+            </div>
+            <span className="text-2xl font-bold font-heading tracking-widest text-foreground group-hover:text-glow transition-all">
+              AKINCILAR
+            </span>
           </a>
         </Link>
 
         {/* Desktop Nav */}
-        <div className="hidden md:flex items-center space-x-8">
+        <div className="hidden md:flex items-center space-x-1">
           {navLinks.map((link) => (
             <a
               key={link.name}
               href={link.href}
-              className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors relative group"
+              className="px-6 py-2 text-sm font-medium font-mono text-primary/70 hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/30 transition-all clip-path-cyber"
             >
               {link.name}
-              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
             </a>
           ))}
-          <Button className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
-            Join Us
+          <Button className="ml-6 bg-secondary text-black hover:bg-white font-bold tracking-widest clip-path-cyber rounded-none border-none">
+            JOIN_NET
           </Button>
         </div>
 
         {/* Mobile Menu Button */}
         <button
-          className="md:hidden text-foreground"
+          className="md:hidden text-primary border border-primary/30 p-2 bg-black/50"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         >
           {isMobileMenuOpen ? <X /> : <Menu />}
@@ -67,19 +71,19 @@ export default function Navigation() {
 
       {/* Mobile Nav */}
       {isMobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 right-0 bg-background border-b border-white/10 p-6 flex flex-col space-y-4 animate-in slide-in-from-top-5">
+        <div className="md:hidden absolute top-full left-0 right-0 bg-black/95 border-b border-primary/30 p-6 flex flex-col space-y-2 animate-in slide-in-from-top-5 backdrop-blur-xl">
           {navLinks.map((link) => (
             <a
               key={link.name}
               href={link.href}
-              className="text-lg font-medium text-foreground/80 hover:text-primary"
+              className="text-lg font-mono text-primary/80 hover:text-white hover:bg-primary/20 p-4 border-l-2 border-transparent hover:border-primary transition-all"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              {link.name}
+              {">"} {link.name}
             </a>
           ))}
-          <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
-            Join Us
+          <Button className="w-full mt-4 bg-secondary text-black font-bold font-heading tracking-widest rounded-none">
+            JOIN_NET
           </Button>
         </div>
       )}
