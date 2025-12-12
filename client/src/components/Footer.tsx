@@ -31,31 +31,31 @@ export default function Footer() {
           </div>
 
           <div>
-            <h4 className="font-bold mb-6 text-primary font-mono tracking-widest text-sm">// EXPLORE</h4>
+            <h4 className="font-bold mb-6 text-primary font-mono tracking-widest text-sm">// KEŞFET</h4>
             <ul className="space-y-4 text-muted-foreground font-mono text-sm">
-              <li><a href="#" className="hover:text-primary hover:pl-2 transition-all">Identity</a></li>
-              <li><a href="#" className="hover:text-primary hover:pl-2 transition-all">Missions</a></li>
-              <li><a href="#" className="hover:text-primary hover:pl-2 transition-all">Database</a></li>
-              <li><a href="#" className="hover:text-primary hover:pl-2 transition-all">Comms</a></li>
+              <li><a href="#" className="hover:text-primary hover:pl-2 transition-all">Kimlik</a></li>
+              <li><a href="#" className="hover:text-primary hover:pl-2 transition-all">Görevler</a></li>
+              <li><a href="#" className="hover:text-primary hover:pl-2 transition-all">Veritabanı</a></li>
+              <li><a href="#" className="hover:text-primary hover:pl-2 transition-all">İletişim</a></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-bold mb-6 text-primary font-mono tracking-widest text-sm">// NETWORK</h4>
+            <h4 className="font-bold mb-6 text-primary font-mono tracking-widest text-sm">// AĞ</h4>
             <ul className="space-y-4 text-muted-foreground font-mono text-sm">
-              <li><a href="#" className="hover:text-primary hover:pl-2 transition-all">Join_Net</a></li>
-              <li><a href="#" className="hover:text-primary hover:pl-2 transition-all">Support_Sys</a></li>
-              <li><a href="#" className="hover:text-primary hover:pl-2 transition-all">Volunteer_Unit</a></li>
-              <li><a href="#" className="hover:text-primary hover:pl-2 transition-all">Time_Log</a></li>
+              <li><a href="#" className="hover:text-primary hover:pl-2 transition-all">Ağa Katıl</a></li>
+              <li><a href="#" className="hover:text-primary hover:pl-2 transition-all">Destek</a></li>
+              <li><a href="#" className="hover:text-primary hover:pl-2 transition-all">Gönüllü Birimi</a></li>
+              <li><a href="#" className="hover:text-primary hover:pl-2 transition-all">Zaman Kaydı</a></li>
             </ul>
           </div>
         </div>
 
         <div className="border-t border-white/10 pt-10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-mono text-muted-foreground">
-          <p>&copy; 2025 AKINCILAR_SYS. ALL RIGHTS RESERVED.</p>
+          <p>&copy; 2025 AKINCILAR_SYS. TÜM HAKLARI SAKLIDIR.</p>
           <div className="flex gap-6">
-            <a href="#" className="hover:text-primary transition-colors">PRIVACY_PROTOCOL</a>
-            <a href="#" className="hover:text-primary transition-colors">TERMS_OF_USE</a>
+            <a href="#" className="hover:text-primary transition-colors">GİZLİLİK PROTOKOLÜ</a>
+            <a href="#" className="hover:text-primary transition-colors">KULLANIM ŞARTLARI</a>
           </div>
         </div>
       </div>

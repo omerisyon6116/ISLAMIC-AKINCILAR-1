@@ -9,24 +9,24 @@ export default function Knowledge() {
           <div>
             <div className="flex items-center gap-2 mb-4 text-secondary font-mono tracking-widest">
               <Database className="w-4 h-4" />
-              <span>DATABASE_ACCESS</span>
+              <span>VERİTABANI ERİŞİMİ</span>
             </div>
             
             <h2 className="text-4xl md:text-5xl font-heading mb-6 leading-none">
-              TRADITION <br />
-              <span className="text-primary text-glow">UPLOADED</span>
+              GELENEK <br />
+              <span className="text-primary text-glow">YÜKLENİYOR</span>
             </h2>
             
             <p className="text-lg text-muted-foreground mb-8 leading-relaxed font-mono border-l-2 border-secondary/50 pl-4">
-              Accessing neural archives... <br/>
-              Retrieving timeless wisdom for modern execution.
+              Hafıza arşivlerine erişiliyor... <br/>
+              Modern çağ için kadim bilgelik getiriliyor.
             </p>
 
             <div className="space-y-4">
               {[
-                { icon: BookOpen, text: "SOURCE_CODE_READINGS" },
-                { icon: Play, text: "VISUAL_LOGS" },
-                { icon: Mic, text: "AUDIO_TRANSMISSIONS" },
+                { icon: BookOpen, text: "OKUMA LİSTELERİ" },
+                { icon: Play, text: "GÖRSEL KAYITLAR" },
+                { icon: Mic, text: "SESLİ AKTARIMLAR" },
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-4 p-4 border border-white/10 bg-white/5 hover:bg-primary/10 hover:border-primary hover:translate-x-2 transition-all cursor-pointer group">
                   <div className="w-10 h-10 border border-primary/30 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-black transition-colors">
@@ -51,17 +51,17 @@ export default function Knowledge() {
               </div>
               
               <div className="font-mono text-primary/50 mb-4 text-xs">
-                // SYSTEM_MSG: FROM COMMANDER_UMAR
+                // SİSTEM MESAJI: KOMUTAN ÖMER (RA)
               </div>
               
               <blockquote className="text-xl md:text-2xl font-bold font-heading text-white leading-relaxed mb-6">
-                "ACQUIRE KNOWLEDGE AND IMPART IT TO THE PEOPLE. ACQUIRE DIGNITY AND TRANQUILITY..."
+                "İLİM ÖĞRENİN VE ONU İNSANLARA ÖĞRETİN. VAKAR VE SÜKUNETİ ÖĞRENİN..."
               </blockquote>
               
               <div className="h-px w-full bg-gradient-to-r from-primary to-transparent mb-4" />
               
               <cite className="block text-secondary font-mono tracking-widest not-italic">
-                &gt;&gt; UMAR_IBN_AL-KHATTAB (RA)
+                &gt;&gt; ÖMER BİN HATTAB (RA)
               </cite>
             </div>
             

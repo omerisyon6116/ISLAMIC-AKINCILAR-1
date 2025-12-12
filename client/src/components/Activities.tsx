@@ -33,12 +33,12 @@ export default function Activities() {
         <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
           <div>
             <h2 className="text-4xl md:text-6xl font-bold font-heading mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">
-              ACTIVE MISSIONS
+              AKTİF GÖREVLER
             </h2>
             <div className="h-1 w-32 bg-primary shadow-[0_0_10px_#00f3ff]" />
           </div>
           <button className="text-primary hover:text-white font-mono text-sm border border-primary/30 px-6 py-2 hover:bg-primary/20 transition-all clip-path-cyber flex items-center gap-2">
-            FULL_CALENDAR <ArrowUpRight className="w-4 h-4" />
+            TAKVİMİ GÖR <ArrowUpRight className="w-4 h-4" />
           </button>
         </div>
 
@@ -57,7 +57,7 @@ export default function Activities() {
               <div className="relative bg-card/40 border-l-4 border-l-primary/50 border-y border-r border-white/5 p-6 h-full hover:border-l-primary hover:bg-card/60 transition-all duration-300">
                 <div className="flex justify-between items-start mb-6">
                   <Badge variant="outline" className="border-primary text-primary bg-primary/10 font-mono rounded-none">
-                    TYPE: {event.category}
+                    TÜR: {event.category}
                   </Badge>
                   <Globe className="w-5 h-5 text-muted-foreground group-hover:text-primary animate-pulse" />
                 </div>

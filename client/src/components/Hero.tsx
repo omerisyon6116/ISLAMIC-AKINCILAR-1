@@ -40,17 +40,31 @@ export default function Hero() {
             <span className="text-4xl md:text-5xl font-light tracking-widest text-white/80">PROTOCOL</span>
           </h1>
           
-          <p className="text-lg md:text-xl text-muted-foreground font-sans max-w-lg border-l-2 border-primary/50 pl-6">
-            Initiating youth sequence. Uploading tradition to the future. 
-            We are the digital guardians of the legacy.
+          <p className="text-lg md:text-xl text-muted-foreground font-sans max-w-xl border-l-2 border-primary/50 pl-6 leading-relaxed">
+            Akıncılar, imanını tanımak, aklını geliştirmek ve ahlakını güçlendirmek isteyen gençler için kurulmuş <span className="text-white">bağımsız bir İslami gençlik merkezidir.</span>
           </p>
+          
+          <div className="space-y-2 text-sm font-mono text-primary/80">
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-secondary rounded-full" />
+              İslam’ı yüzeysel değil bilinçli yaşamak
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-secondary rounded-full" />
+              Gençleri pasif değil üreten bireyler kılmak
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-secondary rounded-full" />
+              İnanç, ilim ve aksiyonu buluşturmak
+            </div>
+          </div>
 
           <div className="flex flex-col sm:flex-row gap-6 pt-4">
             <Button
               size="lg"
               className="bg-primary text-black hover:bg-white hover:text-black text-lg px-10 py-6 h-auto font-bold tracking-widest clip-path-cyber transition-all hover:shadow-[0_0_30px_rgba(0,243,255,0.6)] border-none rounded-none"
             >
-              INITIALIZE <Zap className="ml-2 w-5 h-5 fill-current" />
+              SİSTEME GİR <Zap className="ml-2 w-5 h-5 fill-current" />
             </Button>
             
             <Button
@@ -59,7 +73,7 @@ export default function Hero() {
               className="border-primary/50 text-primary hover:bg-primary/10 text-lg px-10 py-6 h-auto font-mono tracking-widest clip-path-cyber rounded-none relative overflow-hidden group"
             >
               <span className="relative z-10 flex items-center">
-                DATA_LOGS <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                BİLGİ_AL <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </span>
               <div className="absolute inset-0 bg-primary/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
             </Button>

@@ -17,10 +17,10 @@ export default function Navigation() {
   }, []);
 
   const navLinks = [
-    { name: "IDENTITY", href: "#about" },
-    { name: "MISSIONS", href: "#activities" },
-    { name: "DATABASE", href: "#knowledge" },
-    { name: "ENERGY", href: "#energy" },
+    { name: "KİMLİK", href: "#about" },
+    { name: "GÖREVLER", href: "#activities" },
+    { name: "VERİTABANI", href: "#knowledge" },
+    { name: "DURUŞ", href: "#energy" },
   ];
 
   return (
@@ -56,7 +56,7 @@ export default function Navigation() {
             </a>
           ))}
           <Button className="ml-6 bg-secondary text-black hover:bg-white font-bold tracking-widest clip-path-cyber rounded-none border-none">
-            JOIN_NET
+            KATIL
           </Button>
         </div>
 
@@ -83,7 +83,7 @@ export default function Navigation() {
             </a>
           ))}
           <Button className="w-full mt-4 bg-secondary text-black font-bold font-heading tracking-widest rounded-none">
-            JOIN_NET
+            KATIL
           </Button>
         </div>
       )}
