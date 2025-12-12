@@ -3,10 +3,12 @@ import { Link } from "wouter";
 import { Menu, X, Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useSiteContent } from "@/lib/site-content";
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { content } = useSiteContent();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -56,8 +58,13 @@ export default function Navigation() {
               {link.name}
             </a>
           ))}
-          <Button className="ml-6 bg-secondary text-black hover:bg-white font-bold tracking-widest clip-path-cyber rounded-none border-none">
-            KATIL
+          <Link href="/admin">
+            <a className="px-5 py-2 text-xs font-mono tracking-widest text-secondary border border-secondary/40 hover:border-secondary hover:bg-secondary/10 transition-all clip-path-cyber">
+              ADMIN PANEL
+            </a>
+          </Link>
+          <Button asChild className="ml-4 bg-secondary text-black hover:bg-white font-bold tracking-widest clip-path-cyber rounded-none border-none">
+            <a href={content.navCta.href}>{content.navCta.label}</a>
           </Button>
         </div>
 
@@ -83,8 +90,13 @@ export default function Navigation() {
               {">"} {link.name}
             </a>
           ))}
-          <Button className="w-full mt-4 bg-secondary text-black font-bold font-heading tracking-widest rounded-none">
-            KATIL
+          <Link href="/admin">
+            <a className="text-lg font-mono text-secondary hover:text-white hover:bg-secondary/20 p-4 border-l-2 border-transparent hover:border-secondary transition-all" onClick={() => setIsMobileMenuOpen(false)}>
+              {">"} ADMIN PANEL
+            </a>
+          </Link>
+          <Button asChild className="w-full mt-4 bg-secondary text-black font-bold font-heading tracking-widest rounded-none">
+            <a href={content.navCta.href}>{content.navCta.label}</a>
           </Button>
         </div>
       )}

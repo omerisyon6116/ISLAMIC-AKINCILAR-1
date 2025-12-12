@@ -2,8 +2,12 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Zap, Radio } from "lucide-react";
 import heroImage from "@assets/generated_images/cyber_islamic_futuristic_geometric_background.png";
+import { useSiteContent } from "@/lib/site-content";
 
 export default function Hero() {
+  const { content } = useSiteContent();
+  const [primaryCta, secondaryCta] = content.heroCtas;
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
       {/* Cyber Grid Overlay */}
@@ -61,21 +65,28 @@ export default function Hero() {
 
           <div className="flex flex-col sm:flex-row gap-6 pt-4">
             <Button
+              asChild
               size="lg"
               className="bg-primary text-black hover:bg-white hover:text-black text-lg px-10 py-6 h-auto font-bold tracking-widest clip-path-cyber transition-all hover:shadow-[0_0_30px_rgba(0,243,255,0.6)] border-none rounded-none"
             >
-              SİSTEME GİR <Zap className="ml-2 w-5 h-5 fill-current" />
+              <a href={primaryCta?.href ?? "#activities"}>
+                {primaryCta?.label ?? "SİSTEME GİR"} <Zap className="ml-2 w-5 h-5 fill-current" />
+              </a>
             </Button>
-            
+
             <Button
+              asChild
               variant="outline"
               size="lg"
               className="border-primary/50 text-primary hover:bg-primary/10 text-lg px-10 py-6 h-auto font-mono tracking-widest clip-path-cyber rounded-none relative overflow-hidden group"
             >
-              <span className="relative z-10 flex items-center">
-                BİLGİ_AL <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </span>
-              <div className="absolute inset-0 bg-primary/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+              <a href={secondaryCta?.href ?? "#about"}>
+                <span className="relative z-10 flex items-center">
+                  {secondaryCta?.label ?? "BİLGİ_AL"}
+                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </span>
+                <div className="absolute inset-0 bg-primary/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+              </a>
             </Button>
           </div>
         </motion.div>
