@@ -20,7 +20,9 @@ declare global {
       trustLevel: number;
       reputationPoints: number;
       emailVerified: boolean;
+      mustChangePassword: boolean;
       createdAt: Date;
+      tenantRole?: string;
     }
   }
 }
@@ -73,12 +75,14 @@ passport.use(
           trustLevel: user.trustLevel,
           reputationPoints: user.reputationPoints,
           emailVerified: user.emailVerified,
+          mustChangePassword: user.mustChangePassword,
           createdAt: user.createdAt,
         };
 
         return done(null, safeUser);
       } catch (error) {
-        return done(error);
+        console.error("Local strategy error:", error);
+        return done(error as Error);
       }
     }
   )
@@ -112,6 +116,7 @@ passport.deserializeUser(async (id: string, done) => {
       trustLevel: user.trustLevel,
       reputationPoints: user.reputationPoints,
       emailVerified: user.emailVerified,
+      mustChangePassword: user.mustChangePassword,
       createdAt: user.createdAt,
     };
 

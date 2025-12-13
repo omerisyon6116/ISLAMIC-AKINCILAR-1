@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
+import { tenantHref } from "@/lib/tenant";
 import { Terminal, ArrowLeft, Eye, EyeOff } from "lucide-react";
 
 export default function Register() {
@@ -82,7 +83,7 @@ export default function Register() {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent pointer-events-none" />
       
       <div className="w-full max-w-md relative">
-        <Link href="/" className="inline-flex items-center gap-2 text-sm font-mono text-primary hover:text-white mb-8 transition-colors">
+        <Link href={tenantHref("/")} className="inline-flex items-center gap-2 text-sm font-mono text-primary hover:text-white mb-8 transition-colors">
           <ArrowLeft className="w-4 h-4" /> Ana sayfaya dön
         </Link>
 
@@ -187,7 +188,7 @@ export default function Register() {
 
             <div className="mt-6 text-center text-sm text-muted-foreground">
               <p>Zaten hesabınız var mı?</p>
-              <Link href="/login" className="text-primary hover:underline">
+              <Link href={tenantHref("/login")} className="text-primary hover:underline">
                 Giriş yap
               </Link>
             </div>

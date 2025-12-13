@@ -24,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { CallToAction, EventInfo, useSiteContent } from "@/lib/site-content";
 import { Link } from "wouter";
+import { tenantHref } from "@/lib/tenant";
 import { ArrowLeft, Edit2, Plus, RotateCw, Save, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -139,7 +140,7 @@ export default function Admin() {
               Yapılan her değişiklik tarayıcında saklanır ve hemen yansır.
             </p>
           </div>
-          <Link href="/">
+          <Link href={tenantHref("/")}>
             <a className="inline-flex items-center gap-2 text-sm font-mono text-primary hover:text-white border border-primary/30 px-4 py-2 clip-path-cyber">
               <ArrowLeft className="w-4 h-4" /> Ana sayfaya dön
             </a>

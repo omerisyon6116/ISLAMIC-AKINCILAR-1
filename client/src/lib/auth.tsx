@@ -2,6 +2,9 @@ import { createContext, useContext, useEffect, type ReactNode } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { queryClient, apiRequest } from "./queryClient";
+import { apiBasePath, tenantBasePath } from "./tenant";
+
+const AUTH_ME_KEY = `${apiBasePath}/auth/me`;
 
 interface User {
   id: string;
@@ -37,7 +40,7 @@ interface RegisterData {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 async function fetchCurrentUser(): Promise<User | null> {
-  const res = await fetch("/api/auth/me", {
+  const res = await fetch(`${apiBasePath}/auth/me`, {
     credentials: "include",
   });
   
@@ -55,7 +58,7 @@ async function fetchCurrentUser(): Promise<User | null> {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { data: user, isLoading } = useQuery<User | null>({
-    queryKey: ["/api/auth/me"],
+    queryKey: [AUTH_ME_KEY],
     queryFn: fetchCurrentUser,
     retry: false,
     staleTime: 1000 * 60 * 5,
@@ -65,31 +68,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async ({ username, password }: { username: string; password: string }) => {
-      const res = await apiRequest("POST", "/api/auth/login", { username, password });
+      const res = await apiRequest("POST", `${apiBasePath}/auth/login`, { username, password });
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      queryClient.invalidateQueries({ queryKey: [AUTH_ME_KEY] });
     },
   });
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/auth/logout");
+      const res = await apiRequest("POST", `${apiBasePath}/auth/logout`);
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      queryClient.invalidateQueries({ queryKey: [AUTH_ME_KEY] });
     },
   });
 
   const registerMutation = useMutation({
     mutationFn: async (data: RegisterData) => {
-      const res = await apiRequest("POST", "/api/auth/register", data);
+      const res = await apiRequest("POST", `${apiBasePath}/auth/register`, data);
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      queryClient.invalidateQueries({ queryKey: [AUTH_ME_KEY] });
     },
   });
 
@@ -142,7 +145,7 @@ export function RequireAuth({ children, requiredRoles }: { children: ReactNode; 
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      setLocation("/login");
+      setLocation(`${tenantBasePath}/login`);
     }
   }, [isLoading, isAuthenticated, setLocation]);
 

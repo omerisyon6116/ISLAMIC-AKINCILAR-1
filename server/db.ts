@@ -4,12 +4,18 @@ import * as schema from "@shared/schema";
 
 const { Pool } = pg;
 
-if (!process.env.DATABASE_URL) {
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
   throw new Error("DATABASE_URL environment variable is required");
 }
 
+const sslRequired =
+  process.env.DATABASE_SSL === "true" || process.env.PGSSLMODE === "require";
+
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString,
+  ssl: sslRequired ? { rejectUnauthorized: false } : undefined,
 });
 
 export const db = drizzle(pool, { schema });
