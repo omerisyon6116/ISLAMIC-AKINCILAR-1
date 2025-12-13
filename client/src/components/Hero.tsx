@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "wouter";
+import { tenantHref } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Zap, Radio } from "lucide-react";
 import heroImage from "@assets/generated_images/cyber_islamic_futuristic_geometric_background.png";
@@ -73,7 +74,7 @@ export default function Hero() {
                 size="lg"
                 className="bg-primary text-black hover:bg-white hover:text-black text-lg px-10 py-6 h-auto font-bold tracking-widest clip-path-cyber transition-all hover:shadow-[0_0_30px_rgba(0,243,255,0.6)] border-none rounded-none"
               >
-                <Link href="/admin" data-testid="button-hero-admin">
+                <Link href={tenantHref("/admin")} data-testid="button-hero-admin">
                   PANEL <Zap className="ml-2 w-5 h-5 fill-current" />
                 </Link>
               </Button>
@@ -83,7 +84,7 @@ export default function Hero() {
                 size="lg"
                 className="bg-primary text-black hover:bg-white hover:text-black text-lg px-10 py-6 h-auto font-bold tracking-widest clip-path-cyber transition-all hover:shadow-[0_0_30px_rgba(0,243,255,0.6)] border-none rounded-none"
               >
-                <Link href="/login" data-testid="button-hero-login">
+                <Link href={tenantHref("/login")} data-testid="button-hero-login">
                   {primaryCta?.label ?? "SİSTEME GİR"} <Zap className="ml-2 w-5 h-5 fill-current" />
                 </Link>
               </Button>

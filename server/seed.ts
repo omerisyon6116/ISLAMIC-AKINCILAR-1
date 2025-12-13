@@ -1,33 +1,42 @@
 import { db } from "./db";
-import { 
-  tenants, 
-  tenantSettings, 
+import {
+  tenants,
+  tenantSettings,
   tenantMembers,
-  users, 
+  users,
   events,
   forumCategories,
-  posts
+  posts,
 } from "@shared/schema";
 import bcrypt from "bcryptjs";
-import { sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 async function seed() {
   console.log("🌱 Starting database seed...");
 
   try {
-    // Create default tenant: Akıncılar
-    console.log("Creating default tenant...");
-    const [tenant] = await db.insert(tenants).values({
-      name: "Akıncılar Gençlik Topluluğu",
-      slug: "akincilar",
-      plan: "pro",
-      status: "active",
-    }).returning();
+    console.log("Creating or updating default tenant...");
+    const [existingTenant] = await db
+      .select()
+      .from(tenants)
+      .where(eq(tenants.slug, "akincilar"))
+      .limit(1);
 
-    console.log(`✅ Created tenant: ${tenant.name}`);
+    const tenant =
+      existingTenant ||
+      (await db
+        .insert(tenants)
+        .values({
+          name: "Akıncılar Gençlik Topluluğu",
+          slug: "akincilar",
+          plan: "pro",
+          status: "active",
+        })
+        .returning())[0];
 
-    // Create tenant settings
-    await db.insert(tenantSettings).values({
+    console.log(`✅ Tenant ready: ${tenant.name}`);
+
+    const settingsPayload = {
       tenantId: tenant.id,
       siteTitle: "AKINCILAR - Gençlik Hareketi",
       heroTitle: "GELECEĞİ ŞEKILLENDIR",
@@ -36,42 +45,81 @@ async function seed() {
       socials: {
         twitter: "https://twitter.com/akincilar",
         instagram: "https://instagram.com/akincilar",
-        facebook: "https://facebook.com/akincilar"
+        facebook: "https://facebook.com/akincilar",
       },
       defaultLanguage: "tr",
-    });
+    };
 
-    console.log("✅ Created tenant settings");
+    const [existingSettings] = await db
+      .select()
+      .from(tenantSettings)
+      .where(eq(tenantSettings.tenantId, tenant.id))
+      .limit(1);
 
-    // Create admin user
-    console.log("Creating admin user...");
-    const passwordHash = await bcrypt.hash("admin123", 10);
-    
-    const [adminUser] = await db.insert(users).values({
-      username: "admin",
-      displayName: "Admin",
-      email: "admin@akincilar.org",
-      passwordHash,
-      role: "superadmin",
-      status: "active",
-      trustLevel: 5,
-      reputationPoints: 1000,
-      emailVerified: true,
-      bio: "Platform yöneticisi",
-    }).returning();
+    if (existingSettings) {
+      await db
+        .update(tenantSettings)
+        .set(settingsPayload)
+        .where(eq(tenantSettings.tenantId, tenant.id));
+    } else {
+      await db.insert(tenantSettings).values(settingsPayload);
+    }
 
-    console.log(`✅ Created admin user: ${adminUser.username}`);
+    console.log("✅ Tenant settings ready");
 
-    // Add admin to tenant
-    await db.insert(tenantMembers).values({
-      tenantId: tenant.id,
-      userId: adminUser.id,
-      role: "owner",
-    });
+    console.log("Creating or updating admin user...");
+    const passwordHash = await bcrypt.hash("admin123", 12);
 
-    console.log("✅ Added admin to tenant");
+    const [adminUser] = await db
+      .insert(users)
+      .values({
+        username: "admin",
+        displayName: "Admin",
+        email: "admin@akincilar.org",
+        passwordHash,
+        role: "superadmin",
+        status: "active",
+        trustLevel: 5,
+        reputationPoints: 1000,
+        emailVerified: true,
+        bio: "Platform yöneticisi",
+        mustChangePassword: true,
+      })
+      .onConflictDoUpdate({
+        target: users.username,
+        set: {
+          displayName: "Admin",
+          email: "admin@akincilar.org",
+          passwordHash,
+          role: "superadmin",
+          status: "active",
+          trustLevel: 5,
+          reputationPoints: 1000,
+          emailVerified: true,
+          bio: "Platform yöneticisi",
+          mustChangePassword: true,
+        },
+      })
+      .returning();
 
-    // Create forum categories
+    console.log(`✅ Admin user ready: ${adminUser.username}`);
+
+    const [existingMembership] = await db
+      .select()
+      .from(tenantMembers)
+      .where(and(eq(tenantMembers.tenantId, tenant.id), eq(tenantMembers.userId, adminUser.id)))
+      .limit(1);
+
+    if (!existingMembership) {
+      await db.insert(tenantMembers).values({
+        tenantId: tenant.id,
+        userId: adminUser.id,
+        role: "owner",
+      });
+    }
+
+    console.log("✅ Admin membership ensured");
+
     console.log("Creating forum categories...");
     const categories = [
       {
@@ -108,22 +156,40 @@ async function seed() {
         slug: "yardim",
         description: "Sorular ve yardım talepleri",
         isLocked: false,
-      }
+      },
     ];
 
-    await db.insert(forumCategories).values(categories);
-    console.log(`✅ Created ${categories.length} forum categories`);
+    for (const category of categories) {
+      const [existingCategory] = await db
+        .select()
+        .from(forumCategories)
+        .where(
+          and(eq(forumCategories.tenantId, category.tenantId), eq(forumCategories.slug, category.slug)),
+        )
+        .limit(1);
 
-    // Create sample events
+      if (existingCategory) {
+        await db
+          .update(forumCategories)
+          .set(category)
+          .where(eq(forumCategories.id, existingCategory.id));
+      } else {
+        await db.insert(forumCategories).values(category);
+      }
+    }
+
+    console.log(`✅ Forum categories ready (${categories.length})`);
+
     console.log("Creating sample events...");
     const sampleEvents = [
       {
         tenantId: tenant.id,
         title: "Hoşgeldin Toplantısı",
         category: "Sosyal",
-        description: "Yeni üyelerin topluluğumuzla tanışması için düzenlenen hoşgeldin etkinliği. Çay, sohbet ve yeni arkadaşlıklar seni bekliyor!",
+        description:
+          "Yeni üyelerin topluluğumuzla tanışması için düzenlenen hoşgeldin etkinliği. Çay, sohbet ve yeni arkadaşlıklar seni bekliyor!",
         location: "Merkez Bina - Toplantı Salonu",
-        eventDate: new Date("2025-12-20T18:00:00"),
+        eventDate: new Date("2025-12-20T18:00:00Z"),
         capacity: 50,
       },
       {
@@ -132,16 +198,17 @@ async function seed() {
         category: "Eğitim",
         description: "Yapay zeka, blockchain ve geleceğin teknolojileri üzerine uzman konuşmacılarla interaktif seminer.",
         location: "Üniversite Konferans Salonu",
-        eventDate: new Date("2025-12-25T14:00:00"),
+        eventDate: new Date("2025-12-25T14:00:00Z"),
         capacity: 100,
       },
       {
         tenantId: tenant.id,
         title: "Kış Kampı 2025",
         category: "Kamp",
-        description: "3 günlük kış kampımızda doğayla iç içe aktiviteler, atölye çalışmaları ve eğlence dolu anlar!",
+        description:
+          "3 günlük kış kampımızda doğayla iç içe aktiviteler, atölye çalışmaları ve eğlence dolu anlar!",
         location: "Kartepe Dağ Evi",
-        eventDate: new Date("2026-01-10T09:00:00"),
+        eventDate: new Date("2026-01-10T09:00:00Z"),
         capacity: 30,
       },
       {
@@ -150,7 +217,7 @@ async function seed() {
         category: "Eğitim",
         description: "Başarılı girişimcilerle networking fırsatı ve startup ekosistemi hakkında bilgilendirme.",
         location: "İş Merkezi - A Blok",
-        eventDate: new Date("2026-01-15T10:00:00"),
+        eventDate: new Date("2026-01-15T10:00:00Z"),
         capacity: 80,
       },
       {
@@ -159,16 +226,32 @@ async function seed() {
         category: "Spor",
         description: "Futbol, basketbol ve voleybol turnuvaları. Kazanan takımlar ödüllendirilecek!",
         location: "Spor Kompleksi",
-        eventDate: new Date("2026-01-22T13:00:00"),
+        eventDate: new Date("2026-01-22T13:00:00Z"),
         capacity: 60,
-      }
+      },
     ];
 
-    await db.insert(events).values(sampleEvents);
-    console.log(`✅ Created ${sampleEvents.length} sample events`);
+    for (const event of sampleEvents) {
+      const [existingEvent] = await db
+        .select()
+        .from(events)
+        .where(and(eq(events.tenantId, event.tenantId), eq(events.title, event.title)))
+        .limit(1);
 
-    // Create sample blog posts
+      if (existingEvent) {
+        await db
+          .update(events)
+          .set(event)
+          .where(eq(events.id, existingEvent.id));
+      } else {
+        await db.insert(events).values(event);
+      }
+    }
+
+    console.log(`✅ Sample events ready (${sampleEvents.length})`);
+
     console.log("Creating sample blog posts...");
+    const publishedAt = new Date("2024-01-01T00:00:00Z");
     const samplePosts = [
       {
         tenantId: tenant.id,
@@ -199,7 +282,7 @@ Haydi, sen de aramıza katıl ve fark yaratmaya başla!
         `,
         coverImage: null,
         status: "published",
-        publishedAt: new Date(),
+        publishedAt,
         seoTitle: "Akıncılar Gençlik Topluluğu - Hoşgeldiniz",
         seoDescription: "Geleceği birlikte şekillendirelim. Genç, dinamik ve vizyon sahibi topluluğumuz hakkında bilgi edinin.",
       },
@@ -231,14 +314,30 @@ Hepinizi bu heyecan verici yolculuğa davet ediyoruz!
         `,
         coverImage: null,
         status: "published",
-        publishedAt: new Date(),
+        publishedAt,
         seoTitle: "2025 Hedeflerimiz - Akıncılar",
         seoDescription: "Akıncılar topluluğunun 2025 yılı projeleri, etkinlikleri ve hedefleri hakkında detaylı bilgi.",
-      }
+      },
     ];
 
-    await db.insert(posts).values(samplePosts);
-    console.log(`✅ Created ${samplePosts.length} sample blog posts`);
+    for (const post of samplePosts) {
+      const [existingPost] = await db
+        .select()
+        .from(posts)
+        .where(and(eq(posts.tenantId, post.tenantId), eq(posts.slug, post.slug)))
+        .limit(1);
+
+      if (existingPost) {
+        await db
+          .update(posts)
+          .set(post)
+          .where(eq(posts.id, existingPost.id));
+      } else {
+        await db.insert(posts).values(post);
+      }
+    }
+
+    console.log(`✅ Sample blog posts ready (${samplePosts.length})`);
 
     console.log("\n🎉 Seed completed successfully!");
     console.log("\n📋 Summary:");

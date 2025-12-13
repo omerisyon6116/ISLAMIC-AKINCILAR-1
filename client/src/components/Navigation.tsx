@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useSiteContent } from "@/lib/site-content";
 import { useAuth } from "@/lib/auth";
+import { tenantBasePath, tenantHref } from "@/lib/tenant";
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -23,7 +24,7 @@ export default function Navigation() {
 
   const handleLogout = async () => {
     await logout();
-    setLocation("/");
+    setLocation(tenantBasePath);
   };
 
   const navLinks = [
@@ -44,7 +45,7 @@ export default function Navigation() {
       )}
     >
       <div className="container mx-auto px-6 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 group">
+        <Link href={tenantHref("/")} className="flex items-center gap-2 group">
           <div className="w-8 h-8 bg-primary/20 border border-primary flex items-center justify-center group-hover:bg-primary group-hover:text-black transition-colors">
             <Terminal className="w-5 h-5" />
           </div>
@@ -65,8 +66,8 @@ export default function Navigation() {
           ))}
           
           {isAuthenticated && (user?.role === "superadmin" || user?.role === "admin" || user?.role === "moderator") && (
-            <Link 
-              href="/admin"
+            <Link
+              href={tenantHref("/admin")}
               className="px-5 py-2 text-xs font-mono tracking-widest text-secondary border border-secondary/40 hover:border-secondary hover:bg-secondary/10 transition-all clip-path-cyber"
             >
               ADMIN PANEL
@@ -91,7 +92,7 @@ export default function Navigation() {
             </div>
           ) : (
             <Button asChild className="ml-4 bg-secondary text-black hover:bg-white font-bold tracking-widest clip-path-cyber rounded-none border-none">
-              <Link href="/login" data-testid="button-login-nav">{content.navCta.label}</Link>
+              <Link href={tenantHref("/login")} data-testid="button-login-nav">{content.navCta.label}</Link>
             </Button>
           )}
         </div>
@@ -119,8 +120,8 @@ export default function Navigation() {
           ))}
           
           {isAuthenticated && (user?.role === "superadmin" || user?.role === "admin" || user?.role === "moderator") && (
-            <Link 
-              href="/admin"
+            <Link
+              href={tenantHref("/admin")}
               className="text-lg font-mono text-secondary hover:text-white hover:bg-secondary/20 p-4 border-l-2 border-transparent hover:border-secondary transition-all"
               onClick={() => setIsMobileMenuOpen(false)}
             >
@@ -146,7 +147,7 @@ export default function Navigation() {
             </div>
           ) : (
             <Button asChild className="w-full mt-4 bg-secondary text-black font-bold font-heading tracking-widest rounded-none">
-              <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>{content.navCta.label}</Link>
+              <Link href={tenantHref("/login")} onClick={() => setIsMobileMenuOpen(false)}>{content.navCta.label}</Link>
             </Button>
           )}
         </div>

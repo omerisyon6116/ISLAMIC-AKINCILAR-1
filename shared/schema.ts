@@ -62,6 +62,7 @@ export const users = pgTable("users", {
   trustLevel: integer("trust_level").notNull().default(0), // 0-5
   reputationPoints: integer("reputation_points").notNull().default(0),
   emailVerified: boolean("email_verified").notNull().default(false),
+  mustChangePassword: boolean("must_change_password").notNull().default(false),
   lastLoginAt: timestamp("last_login_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => ({

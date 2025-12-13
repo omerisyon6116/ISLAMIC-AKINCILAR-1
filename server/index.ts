@@ -10,6 +10,8 @@ import { pool } from "./db";
 const app = express();
 const httpServer = createServer(app);
 
+app.set("trust proxy", 1);
+
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;
@@ -28,6 +30,9 @@ app.use(express.urlencoded({ extended: false }));
 
 const PgSession = connectPgSimple(session);
 
+const sessionSecret =
+  process.env.SESSION_SECRET || "akincilar-super-secret-key-change-in-production";
+
 app.use(
   session({
     store: new PgSession({
@@ -35,15 +40,17 @@ app.use(
       tableName: "session",
       createTableIfMissing: true,
     }),
-    secret: process.env.SESSION_SECRET || "akincilar-super-secret-key-change-in-production",
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     cookie: {
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      sameSite: "lax",
+      sameSite: process.env.SESSION_SAMESITE || "lax",
     },
+    name: "sid",
+    proxy: process.env.NODE_ENV === "production",
   })
 );
 
