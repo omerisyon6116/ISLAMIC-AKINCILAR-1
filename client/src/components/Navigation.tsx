@@ -1,18 +1,43 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, Terminal, LogOut, User } from "lucide-react";
+import { Menu, X, Terminal, LogOut, User, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useSiteContent } from "@/lib/site-content";
 import { useAuth } from "@/lib/auth";
 import { tenantBasePath, tenantHref } from "@/lib/tenant";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const { content } = useSiteContent();
   const { user, isAuthenticated, logout } = useAuth();
   const [, setLocation] = useLocation();
+
+  const notificationsQuery = useQuery<{ notifications: any[] }>({
+    queryKey: ["notifications", apiBasePath],
+    queryFn: async () => {
+      const res = await fetch(`${apiBasePath}/notifications`, { credentials: "include" });
+      if (!res.ok) throw new Error("Bildirimler alınamadı");
+      return res.json();
+    },
+    enabled: isAuthenticated,
+  });
+
+  const unreadCount = notificationsQuery.data?.notifications.filter((n) => !n.isRead).length ?? 0;
+
+  const markReadMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `${apiBasePath}/notifications/read`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications", apiBasePath] });
+    },
+  });
 
   useEffect(() => {
     const handleScroll = () => {
@@ -75,7 +100,55 @@ export default function Navigation() {
           )}
 
           {isAuthenticated ? (
-            <div className="flex items-center gap-2 ml-4">
+            <div className="flex items-center gap-2 ml-4 relative">
+              <div className="relative">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative"
+                  onClick={() => setShowNotifications((prev) => !prev)}
+                  aria-label="Bildirimler"
+                >
+                  <Bell className="w-4 h-4" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 text-[10px] bg-secondary text-black rounded-full px-1">
+                      {unreadCount}
+                    </span>
+                  )}
+                </Button>
+                {showNotifications && (
+                  <div className="absolute right-0 mt-2 w-72 bg-black/90 border border-primary/30 shadow-lg p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-mono text-muted-foreground">Bildirimler</p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => markReadMutation.mutate()}
+                        disabled={markReadMutation.isLoading || unreadCount === 0}
+                      >
+                        Hepsini okundu say
+                      </Button>
+                    </div>
+                    {notificationsQuery.isLoading ? (
+                      <p className="text-sm text-muted-foreground">Yükleniyor...</p>
+                    ) : (notificationsQuery.data?.notifications ?? []).slice(0, 5).map((notification) => (
+                      <div
+                        key={notification.id}
+                        className="border border-primary/10 p-2 text-sm text-muted-foreground"
+                      >
+                        <p className="text-white">{notification.payload?.message ?? notification.type}</p>
+                        <p className="text-[10px] text-primary/70">
+                          {new Date(notification.createdAt).toLocaleString("tr-TR")}
+                        </p>
+                      </div>
+                    ))}
+                    {(notificationsQuery.data?.notifications ?? []).length === 0 && !notificationsQuery.isLoading && (
+                      <p className="text-sm text-muted-foreground">Henüz bildirimin yok.</p>
+                    )}
+                  </div>
+                )}
+              </div>
               <span className="text-xs font-mono text-muted-foreground flex items-center gap-1">
                 <User className="w-3 h-3" />
                 {user?.displayName || user?.username}

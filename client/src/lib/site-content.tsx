@@ -1,4 +1,7 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useMemo } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiBasePath } from "./tenant";
+import { apiRequest, queryClient } from "./queryClient";
 
 export type CallToAction = {
   id: string;
@@ -6,203 +9,152 @@ export type CallToAction = {
   href: string;
 };
 
-export type EventInfo = {
-  id: string;
-  title: string;
-  category: string;
-  date: string;
-  location: string;
-  description: string;
-};
-
 export type SiteContentState = {
   heroCtas: CallToAction[];
   navCta: CallToAction;
-  events: EventInfo[];
+  heroTitle: string;
+  heroSubtitle: string;
+  siteTitle: string;
+  contactEmail: string;
+  socials: Record<string, string>;
 };
 
-const STORAGE_KEY = "akincilar:site-content";
+const SITE_CONTENT_KEY = [`${apiBasePath}/site-content`];
+
+const defaultHeroCtas: CallToAction[] = [
+  { id: "cta-primary", label: "SİSTEME GİR", href: "#activities" },
+  { id: "cta-secondary", label: "BİLGİ_AL", href: "#about" },
+];
 
 const defaultContent: SiteContentState = {
-  heroCtas: [
-    { id: "cta-primary", label: "SİSTEME GİR", href: "#activities" },
-    { id: "cta-secondary", label: "BİLGİ_AL", href: "#about" },
-  ],
+  heroCtas: defaultHeroCtas,
   navCta: { id: "nav-cta", label: "KATIL", href: "#activities" },
-  events: [
-    {
-      id: "halaqa-os-update",
-      title: "Halaqa_OS Update",
-      category: "Download",
-      date: "FRI | 20:00",
-      location: "Main Server",
-      description:
-        "System maintenance for the soul. Discussion and tea integration.",
-    },
-    {
-      id: "fajr-ops-hike",
-      title: "Fajr_Ops Hike",
-      category: "Physical",
-      date: "SUN | 05:30",
-      location: "Sector Blue Ridge",
-      description: "High altitude training. Sunrise synchronization.",
-    },
-    {
-      id: "future-tech-workshop",
-      title: "Future_Tech Workshop",
-      category: "Skills",
-      date: "OCT 25 | 14:00",
-      location: "Innovation Hub",
-      description: "Robotics, AI, and ethical hacking for the Muslim youth.",
-    },
-  ],
+  heroTitle: "AKINCILAR PROTOCOL",
+  heroSubtitle:
+    "Akıncılar, imanını tanımak, aklını geliştirmek ve ahlakını güçlendirmek isteyen gençler için kurulmuş bağımsız bir İslami gençlik merkezidir.",
+  siteTitle: "AKINCILAR",
+  contactEmail: "",
+  socials: {},
 };
 
-function sanitizeCtas(ctas: unknown, fallback: CallToAction[]) {
-  if (!Array.isArray(ctas)) return fallback;
+function mapContent(apiContent: any): SiteContentState {
+  const socials = (apiContent?.socials ?? {}) as Record<string, string>;
 
-  return fallback.map((cta) => {
-    const incoming = ctas.find((item) => item && item.id === cta.id);
-    if (incoming && typeof incoming === "object") {
-      return {
-        ...cta,
-        ...incoming,
-      } as CallToAction;
-    }
-    return cta;
-  });
+  const heroCtas: CallToAction[] = [
+    {
+      ...defaultHeroCtas[0],
+      label: socials.primaryCtaLabel ?? defaultHeroCtas[0].label,
+      href: socials.primaryCtaHref ?? defaultHeroCtas[0].href,
+    },
+    {
+      ...defaultHeroCtas[1],
+      label: socials.secondaryCtaLabel ?? defaultHeroCtas[1].label,
+      href: socials.secondaryCtaHref ?? defaultHeroCtas[1].href,
+    },
+  ];
+
+  const navCta: CallToAction = {
+    ...defaultContent.navCta,
+    label: socials.navCtaLabel ?? defaultContent.navCta.label,
+    href: socials.navCtaHref ?? defaultContent.navCta.href,
+  };
+
+  return {
+    heroCtas,
+    navCta,
+    heroTitle: apiContent?.heroTitle || defaultContent.heroTitle,
+    heroSubtitle: apiContent?.heroSubtitle || defaultContent.heroSubtitle,
+    siteTitle: apiContent?.siteTitle || defaultContent.siteTitle,
+    contactEmail: apiContent?.contactEmail || defaultContent.contactEmail,
+    socials,
+  };
 }
 
-function sanitizeNavCta(cta: unknown, fallback: CallToAction) {
-  if (cta && typeof cta === "object" && "label" in (cta as Record<string, unknown>)) {
-    return { ...fallback, ...(cta as CallToAction) };
-  }
-  return fallback;
-}
-
-function sanitizeEvents(events: unknown, fallback: EventInfo[]) {
-  if (!Array.isArray(events)) return fallback;
-  return events
-    .filter((event) =>
-      event &&
-      typeof event === "object" &&
-      "title" in (event as Record<string, unknown>) &&
-      "id" in (event as Record<string, unknown>),
-    )
-    .map((event) => ({ ...event } as EventInfo));
-}
-
-function loadContent(): SiteContentState {
-  if (typeof window === "undefined") {
-    return defaultContent;
-  }
-
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return defaultContent;
-
-    const parsed = JSON.parse(stored) as Partial<SiteContentState>;
-
-    return {
-      heroCtas: sanitizeCtas(parsed.heroCtas, defaultContent.heroCtas),
-      navCta: sanitizeNavCta(parsed.navCta, defaultContent.navCta),
-      events: sanitizeEvents(parsed.events, defaultContent.events),
-    };
-  } catch (error) {
-    console.error("Failed to load site content from storage", error);
-    return defaultContent;
-  }
-}
-
-function createId() {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  return Math.random().toString(36).slice(2);
+function buildSocials(content: SiteContentState) {
+  return {
+    ...content.socials,
+    primaryCtaLabel: content.heroCtas[0]?.label ?? defaultHeroCtas[0].label,
+    primaryCtaHref: content.heroCtas[0]?.href ?? defaultHeroCtas[0].href,
+    secondaryCtaLabel: content.heroCtas[1]?.label ?? defaultHeroCtas[1].label,
+    secondaryCtaHref: content.heroCtas[1]?.href ?? defaultHeroCtas[1].href,
+    navCtaLabel: content.navCta.label,
+    navCtaHref: content.navCta.href,
+  } as Record<string, string>;
 }
 
 export type SiteContentContextValue = {
   content: SiteContentState;
+  isLoading: boolean;
   updateHeroCta: (id: string, updates: Partial<CallToAction>) => void;
   updateNavCta: (updates: Partial<CallToAction>) => void;
-  addEvent: (event: Omit<EventInfo, "id">) => void;
-  updateEvent: (id: string, updates: Partial<EventInfo>) => void;
-  removeEvent: (id: string) => void;
-  resetContent: () => void;
+  updateHeroContent: (updates: Partial<Pick<SiteContentState, "heroTitle" | "heroSubtitle" | "siteTitle" | "contactEmail">>) => void;
+  refresh: () => void;
 };
 
 const SiteContentContext = createContext<SiteContentContextValue | undefined>(undefined);
 
 export function SiteContentProvider({ children }: { children: React.ReactNode }) {
-  const [content, setContent] = useState<SiteContentState>(loadContent);
+  const { data, isLoading } = useQuery({
+    queryKey: SITE_CONTENT_KEY,
+    queryFn: async () => {
+      const res = await fetch(`${apiBasePath}/site-content`, { credentials: "include" });
+      if (!res.ok) {
+        return { content: null };
+      }
+      return res.json();
+    },
+  });
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(content));
-  }, [content]);
+  const content = useMemo(() => mapContent(data?.content), [data]);
+
+  const mutation = useMutation({
+    mutationFn: async (next: SiteContentState) => {
+      const res = await apiRequest("PATCH", `${apiBasePath}/site-content`, {
+        siteTitle: next.siteTitle,
+        heroTitle: next.heroTitle,
+        heroSubtitle: next.heroSubtitle,
+        contactEmail: next.contactEmail,
+        socials: buildSocials(next),
+      });
+      return res.json();
+    },
+    onSuccess: (response) => {
+      queryClient.setQueryData(SITE_CONTENT_KEY, response);
+    },
+  });
+
+  const persist = (next: SiteContentState) => {
+    mutation.mutate(next);
+  };
+
+  const updateHeroCta: SiteContentContextValue["updateHeroCta"] = (id, updates) => {
+    const updated = {
+      ...content,
+      heroCtas: content.heroCtas.map((cta) => (cta.id === id ? { ...cta, ...updates } : cta)),
+    };
+    persist(updated);
+  };
+
+  const updateNavCta: SiteContentContextValue["updateNavCta"] = (updates) => {
+    const updated = { ...content, navCta: { ...content.navCta, ...updates } };
+    persist(updated);
+  };
+
+  const updateHeroContent: SiteContentContextValue["updateHeroContent"] = (updates) => {
+    const updated = { ...content, ...updates };
+    persist(updated);
+  };
 
   const value = useMemo<SiteContentContextValue>(() => ({
     content,
-    updateHeroCta: (id, updates) => {
-      setContent((prev) => ({
-        ...prev,
-        heroCtas: prev.heroCtas.map((cta) =>
-          cta.id === id
-            ? {
-                ...cta,
-                ...updates,
-              }
-            : cta,
-        ),
-      }));
-    },
-    updateNavCta: (updates) => {
-      setContent((prev) => ({
-        ...prev,
-        navCta: { ...prev.navCta, ...updates },
-      }));
-    },
-    addEvent: (event) => {
-      setContent((prev) => ({
-        ...prev,
-        events: [
-          { ...event, id: createId() },
-          ...prev.events,
-        ],
-      }));
-    },
-    updateEvent: (id, updates) => {
-      setContent((prev) => ({
-        ...prev,
-        events: prev.events.map((event) =>
-          event.id === id
-            ? {
-                ...event,
-                ...updates,
-              }
-            : event,
-        ),
-      }));
-    },
-    removeEvent: (id) => {
-      setContent((prev) => ({
-        ...prev,
-        events: prev.events.filter((event) => event.id !== id),
-      }));
-    },
-    resetContent: () => {
-      if (typeof window !== "undefined") {
-        localStorage.removeItem(STORAGE_KEY);
-      }
-      setContent(defaultContent);
-    },
-  }), [content]);
+    isLoading,
+    updateHeroCta,
+    updateNavCta,
+    updateHeroContent,
+    refresh: () => queryClient.invalidateQueries({ queryKey: SITE_CONTENT_KEY }),
+  }), [content, isLoading]);
 
-  return (
-    <SiteContentContext.Provider value={value}>
-      {children}
-    </SiteContentContext.Provider>
-  );
+  return <SiteContentContext.Provider value={value}>{children}</SiteContentContext.Provider>;
 }
 
 export function useSiteContent() {
