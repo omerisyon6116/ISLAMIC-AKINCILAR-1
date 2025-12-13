@@ -13,12 +13,12 @@ import { SiteContentProvider } from "@/lib/site-content";
 import { AuthProvider, RequireAuth } from "@/lib/auth";
 import { tenantBasePath } from "@/lib/tenant";
 
-function RedirectToTenant() {
+function RedirectToTenant({ suffix = "" }: { suffix?: string }) {
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    setLocation(tenantBasePath);
-  }, [setLocation]);
+    setLocation(`${tenantBasePath}${suffix}`);
+  }, [setLocation, suffix]);
 
   return null;
 }
@@ -34,7 +34,18 @@ function Router() {
           <Admin />
         </RequireAuth>
       </Route>
-      <Route path="/" component={RedirectToTenant} />
+      <Route path="/">
+        <RedirectToTenant />
+      </Route>
+      <Route path="/admin">
+        <RedirectToTenant suffix="/admin" />
+      </Route>
+      <Route path="/login">
+        <RedirectToTenant suffix="/login" />
+      </Route>
+      <Route path="/register">
+        <RedirectToTenant suffix="/register" />
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );
