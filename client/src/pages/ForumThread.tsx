@@ -14,6 +14,9 @@ type ThreadResponse = {
     title: string;
     body: string;
     isLocked: boolean;
+    repliesCount: number;
+    isFollowed?: boolean;
+    isSaved?: boolean;
     author?: { displayName?: string | null; username: string };
     createdAt: string;
   };
@@ -30,6 +33,8 @@ export default function ForumThread({ threadId }: { threadId: string }) {
   const queryClient = useQueryClient();
   const [body, setBody] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [following, setFollowing] = useState(false);
 
   const { data, isLoading } = useQuery<ThreadResponse>({
     queryKey: ["forum", "thread", threadId],
@@ -60,6 +65,36 @@ export default function ForumThread({ threadId }: { threadId: string }) {
   const thread = data?.thread;
   const replies = data?.replies ?? [];
 
+  const toggleFollow = async () => {
+    if (!thread) return;
+    setFollowing(true);
+    const method = thread.isFollowed ? "DELETE" : "POST";
+    await fetch(`${apiBasePath}/forum/threads/${thread.id}/follow`, {
+      method,
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+    });
+    setFollowing(false);
+    queryClient.invalidateQueries({ queryKey: ["forum", "thread", threadId] });
+  };
+
+  const toggleSave = async () => {
+    if (!thread) return;
+    setSaving(true);
+    if (thread.isSaved) {
+      await fetch(`${apiBasePath}/saved/${thread.id}`, { method: "DELETE", credentials: "include" });
+    } else {
+      await fetch(`${apiBasePath}/saved`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetType: "thread", targetId: thread.id }),
+      });
+    }
+    setSaving(false);
+    queryClient.invalidateQueries({ queryKey: ["forum", "thread", threadId] });
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Navigation />
@@ -70,9 +105,32 @@ export default function ForumThread({ threadId }: { threadId: string }) {
               <MessageCircle className="w-4 h-4" />
               <span>{thread.author?.displayName || thread.author?.username}</span>
               <span>• {new Date(thread.createdAt).toLocaleString("tr-TR")}</span>
+              {thread.repliesCount === 0 && <span className="text-primary">Cevap bekliyor</span>}
             </div>
             <h1 className="text-3xl font-heading text-white">{thread.title}</h1>
             <p className="text-sm text-muted-foreground whitespace-pre-wrap">{thread.body}</p>
+            {isAuthenticated && (
+              <div className="flex items-center gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={toggleFollow}
+                  disabled={following}
+                  className="border-primary/50 text-primary"
+                >
+                  {thread.isFollowed ? "Takipten Çık" : "Takip Et"}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={toggleSave}
+                  disabled={saving}
+                  className="border-secondary/50 text-secondary"
+                >
+                  {thread.isSaved ? "Kaydedildi" : "Kaydet"}
+                </Button>
+              </div>
+            )}
             {thread.isLocked && (
               <p className="text-xs text-destructive">Bu konu kilitli, yanıt gönderilemez.</p>
             )}

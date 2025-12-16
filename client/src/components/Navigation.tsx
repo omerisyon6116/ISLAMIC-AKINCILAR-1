@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 import { useSiteContent } from "@/lib/site-content";
 import { useAuth } from "@/lib/auth";
 import { tenantBasePath, tenantHref } from "@/lib/tenant";
+import { useQuery } from "@tanstack/react-query";
+import { apiBasePath } from "@/lib/tenant";
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -13,6 +15,20 @@ export default function Navigation() {
   const { content } = useSiteContent();
   const { user, isAuthenticated, logout } = useAuth();
   const [, setLocation] = useLocation();
+
+  const { data: notificationData } = useQuery<{ notifications: { id: string; isRead: boolean }[] }>({
+    queryKey: ["notifications", apiBasePath],
+    queryFn: async () => {
+      const res = await fetch(`${apiBasePath}/notifications`, { credentials: "include" });
+      if (res.status === 401) return { notifications: [] };
+      if (!res.ok) throw new Error("Bildirim alınamadı");
+      return res.json();
+    },
+    enabled: isAuthenticated,
+    refetchInterval: 15000,
+  });
+
+  const unreadCount = notificationData?.notifications.filter((n) => !n.isRead).length || 0;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -74,7 +90,21 @@ export default function Navigation() {
               >
                 {link.name}
               </a>
-            ),
+              ),
+          )}
+
+          {isAuthenticated && (
+            <Link
+              href={tenantHref("/notifications")}
+              className="relative px-5 py-2 text-xs font-mono tracking-widest text-primary border border-primary/30 hover:border-primary/60 hover:bg-primary/10 transition-all clip-path-cyber"
+            >
+              BİLDİRİMLER
+              {unreadCount > 0 && (
+                <span className="ml-2 inline-flex items-center justify-center text-[10px] bg-secondary text-black px-2 py-0.5">
+                  {unreadCount}
+                </span>
+              )}
+            </Link>
           )}
           
           {isAuthenticated && (user?.role === "superadmin" || user?.role === "admin" || user?.role === "moderator") && (
@@ -88,12 +118,21 @@ export default function Navigation() {
 
           {isAuthenticated ? (
             <div className="flex items-center gap-2 ml-4">
-              <span className="text-xs font-mono text-muted-foreground flex items-center gap-1">
+              <Link
+                href={tenantHref(`/u/${user?.username}`)}
+                className="text-xs font-mono text-muted-foreground flex items-center gap-1 hover:text-primary"
+              >
                 <User className="w-3 h-3" />
                 {user?.displayName || user?.username}
-              </span>
-              <Button 
-                variant="ghost" 
+              </Link>
+              <Link
+                href={tenantHref("/saved")}
+                className="text-[11px] font-mono text-primary hover:text-white"
+              >
+                Kaydedilenler
+              </Link>
+              <Button
+                variant="ghost"
                 size="sm"
                 onClick={handleLogout}
                 className="gap-1 text-xs font-mono"
@@ -141,7 +180,17 @@ export default function Navigation() {
               </a>
             ),
           )}
-          
+
+          {isAuthenticated && (
+            <Link
+              href={tenantHref("/notifications")}
+              className="text-lg font-mono text-primary/80 hover:text-white hover:bg-primary/20 p-4 border-l-2 border-transparent hover:border-primary transition-all"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              {">"} BİLDİRİMLER {unreadCount > 0 && <span className="ml-2 text-secondary">({unreadCount})</span>}
+            </Link>
+          )}
+
           {isAuthenticated && (user?.role === "superadmin" || user?.role === "admin" || user?.role === "moderator") && (
             <Link
               href={tenantHref("/admin")}
@@ -154,9 +203,13 @@ export default function Navigation() {
 
           {isAuthenticated ? (
             <div className="pt-4 space-y-2">
-              <p className="text-xs font-mono text-muted-foreground px-4">
+              <Link
+                href={tenantHref(`/u/${user?.username}`)}
+                className="text-xs font-mono text-muted-foreground px-4 block hover:text-primary"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
                 Giriş yapan: {user?.displayName || user?.username}
-              </p>
+              </Link>
               <button
                 onClick={() => {
                   handleLogout();

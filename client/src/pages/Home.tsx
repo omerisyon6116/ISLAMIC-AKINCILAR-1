@@ -3,6 +3,7 @@ import Hero from "@/components/Hero";
 import About from "@/components/About";
 import Activities from "@/components/Activities";
 import BlogSection from "@/components/BlogSection";
+import ForumShowcase from "@/components/ForumShowcase";
 import Knowledge from "@/components/Knowledge";
 import YouthEnergy from "@/components/YouthEnergy";
 import Footer from "@/components/Footer";
@@ -13,6 +14,7 @@ export default function Home() {
       <Navigation />
       <main>
         <Hero />
+        <ForumShowcase />
         <About />
         <Activities />
         <BlogSection />

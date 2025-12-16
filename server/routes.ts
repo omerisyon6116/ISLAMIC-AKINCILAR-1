@@ -14,6 +14,8 @@ import {
   tenantSettings,
   notifications,
   moderationLogs,
+  forumReactions,
+  forumSubscriptions,
 } from "@shared/schema";
 import { and, desc, eq, like, sql, inArray } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -59,6 +61,16 @@ const createThreadSchema = z.object({
 
 const createReplySchema = z.object({
   body: z.string().min(1),
+});
+
+const followSchema = z.object({
+  targetType: z.enum(["category", "thread", "user"]),
+  targetId: z.string().min(1),
+});
+
+const saveSchema = z.object({
+  targetType: z.enum(["thread", "post"]),
+  targetId: z.string().min(1),
 });
 
 const createEventSchema = z.object({
@@ -467,7 +479,35 @@ export async function registerRoutes(
       .where(eq(forumCategories.tenantId, req.tenant!.id))
       .orderBy(forumCategories.createdAt);
 
-    return res.json({ categories });
+    const categoryMeta = await Promise.all(
+      categories.map(async (category) => {
+        const [lastThread] = await db
+          .select()
+          .from(forumThreads)
+          .where(and(eq(forumThreads.categoryId, category.id), eq(forumThreads.tenantId, req.tenant!.id)))
+          .orderBy(desc(forumThreads.lastActivityAt))
+          .limit(1);
+
+        const replyCountResult = await db.execute(
+          sql`select coalesce(sum(${forumThreads.repliesCount}),0)::int as replies from ${forumThreads} where ${forumThreads.categoryId} = ${category.id} and ${forumThreads.tenantId} = ${req.tenant!.id}`,
+        );
+        const repliesTotal = Number((replyCountResult.rows[0] as any)?.replies || 0);
+
+        const threadCountResult = await db.execute(
+          sql`select count(*)::int as count from ${forumThreads} where ${forumThreads.categoryId} = ${category.id} and ${forumThreads.tenantId} = ${req.tenant!.id}`,
+        );
+        const threadsTotal = Number((threadCountResult.rows[0] as any)?.count || 0);
+
+        return {
+          ...category,
+          lastThread,
+          threadsTotal,
+          repliesTotal,
+        };
+      }),
+    );
+
+    return res.json({ categories: categoryMeta });
   });
 
   apiRouter.get("/forum/categories/:categoryId/threads", async (req: Request, res: Response) => {
@@ -598,13 +638,47 @@ export async function registerRoutes(
       .limit(limit)
       .offset(offset);
 
+    const viewerId = req.isAuthenticated() ? req.user!.id : null;
+    let isFollowed = false;
+    let isSaved = false;
+
+    if (viewerId) {
+      const [followRow] = await db
+        .select()
+        .from(forumReactions)
+        .where(
+          and(
+            eq(forumReactions.userId, viewerId),
+            eq(forumReactions.targetId, threadRow.thread.id),
+            eq(forumReactions.targetType, "thread"),
+            eq(forumReactions.reactionType, "follow"),
+          ),
+        )
+        .limit(1);
+      isFollowed = !!followRow;
+
+      const [saveRow] = await db
+        .select()
+        .from(forumReactions)
+        .where(
+          and(
+            eq(forumReactions.userId, viewerId),
+            eq(forumReactions.targetId, threadRow.thread.id),
+            eq(forumReactions.targetType, "thread"),
+            eq(forumReactions.reactionType, "save"),
+          ),
+        )
+        .limit(1);
+      isSaved = !!saveRow;
+    }
+
     const countResult = await db.execute(
       sql`select count(*)::int as count from ${forumReplies} where ${forumReplies.threadId} = ${threadRow.thread.id}`,
     );
     const total = Number((countResult.rows[0] as any).count || 0);
 
     return res.json({
-      thread: { ...threadRow.thread, author: threadRow.author },
+      thread: { ...threadRow.thread, author: threadRow.author, isFollowed, isSaved },
       replies: replies.map((row) => ({ ...row.reply, author: row.author })),
       pagination: { page, limit, total },
     });
@@ -659,6 +733,54 @@ export async function registerRoutes(
     }
 
     return res.status(201).json({ reply });
+  });
+
+  apiRouter.post("/forum/threads/:threadId/follow", requireAuth, async (req: Request, res: Response) => {
+    const [thread] = await db
+      .select()
+      .from(forumThreads)
+      .where(and(eq(forumThreads.id, req.params.threadId), eq(forumThreads.tenantId, req.tenant!.id)))
+      .limit(1);
+
+    if (!thread) {
+      return res.status(404).json({ message: "Konu bulunamadı" });
+    }
+
+    await db
+      .insert(forumReactions)
+      .values({
+        userId: req.user!.id,
+        targetType: "thread",
+        targetId: thread.id,
+        reactionType: "follow",
+      })
+      .onConflictDoNothing();
+
+    await db
+      .insert(forumSubscriptions)
+      .values({ userId: req.user!.id, threadId: thread.id })
+      .onConflictDoNothing();
+
+    return res.json({ message: "Takip edildi" });
+  });
+
+  apiRouter.delete("/forum/threads/:threadId/follow", requireAuth, async (req: Request, res: Response) => {
+    await db
+      .delete(forumReactions)
+      .where(
+        and(
+          eq(forumReactions.userId, req.user!.id),
+          eq(forumReactions.targetId, req.params.threadId),
+          eq(forumReactions.targetType, "thread"),
+          eq(forumReactions.reactionType, "follow"),
+        ),
+      );
+
+    await db
+      .delete(forumSubscriptions)
+      .where(and(eq(forumSubscriptions.userId, req.user!.id), eq(forumSubscriptions.threadId, req.params.threadId)));
+
+    return res.json({ message: "Takipten çıkıldı" });
   });
 
   apiRouter.post(
@@ -776,6 +898,31 @@ export async function registerRoutes(
     });
   });
 
+  apiRouter.get("/forum/highlights", async (req: Request, res: Response) => {
+    const newest = await db
+      .select()
+      .from(forumThreads)
+      .where(eq(forumThreads.tenantId, req.tenant!.id))
+      .orderBy(desc(forumThreads.createdAt))
+      .limit(5);
+
+    const mostReplied = await db
+      .select()
+      .from(forumThreads)
+      .where(eq(forumThreads.tenantId, req.tenant!.id))
+      .orderBy(desc(forumThreads.repliesCount), desc(forumThreads.lastActivityAt))
+      .limit(5);
+
+    const mostViewed = await db
+      .select()
+      .from(forumThreads)
+      .where(eq(forumThreads.tenantId, req.tenant!.id))
+      .orderBy(desc(forumThreads.viewsCount), desc(forumThreads.lastActivityAt))
+      .limit(5);
+
+    return res.json({ newest, mostReplied, mostViewed });
+  });
+
   apiRouter.get("/activity", async (req: Request, res: Response) => {
     const pagination = paginationSchema.safeParse(req.query);
     const { limit, page } = pagination.success ? pagination.data : { page: 1, limit: 20 };
@@ -844,6 +991,193 @@ export async function registerRoutes(
       .slice(0, limit);
 
     return res.json({ items, pagination: { page, limit } });
+  });
+
+  apiRouter.get("/follows", requireAuth, async (req: Request, res: Response) => {
+    const rows = await db
+      .select()
+      .from(forumReactions)
+      .where(and(eq(forumReactions.userId, req.user!.id), eq(forumReactions.reactionType, "follow")));
+
+    return res.json({ follows: rows });
+  });
+
+  apiRouter.post("/follows", requireAuth, async (req: Request, res: Response) => {
+    const parsed = followSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(422).json({ message: "Geçersiz veri" });
+    }
+
+    if (parsed.data.targetType === "category") {
+      const [category] = await db
+        .select()
+        .from(forumCategories)
+        .where(and(eq(forumCategories.id, parsed.data.targetId), eq(forumCategories.tenantId, req.tenant!.id)))
+        .limit(1);
+      if (!category) return res.status(404).json({ message: "Kategori bulunamadı" });
+    }
+
+    if (parsed.data.targetType === "thread") {
+      const [thread] = await db
+        .select()
+        .from(forumThreads)
+        .where(and(eq(forumThreads.id, parsed.data.targetId), eq(forumThreads.tenantId, req.tenant!.id)))
+        .limit(1);
+      if (!thread) return res.status(404).json({ message: "Konu bulunamadı" });
+      await db
+        .insert(forumSubscriptions)
+        .values({ userId: req.user!.id, threadId: thread.id })
+        .onConflictDoNothing();
+    }
+
+    await db
+      .insert(forumReactions)
+      .values({
+        userId: req.user!.id,
+        targetType: parsed.data.targetType,
+        targetId: parsed.data.targetId,
+        reactionType: "follow",
+      })
+      .onConflictDoNothing();
+
+    return res.json({ message: "Takip edildi" });
+  });
+
+  apiRouter.delete("/follows", requireAuth, async (req: Request, res: Response) => {
+    const parsed = followSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(422).json({ message: "Geçersiz veri" });
+    }
+
+    await db
+      .delete(forumReactions)
+      .where(
+        and(
+          eq(forumReactions.userId, req.user!.id),
+          eq(forumReactions.targetType, parsed.data.targetType),
+          eq(forumReactions.targetId, parsed.data.targetId),
+          eq(forumReactions.reactionType, "follow"),
+        ),
+      );
+
+    if (parsed.data.targetType === "thread") {
+      await db
+        .delete(forumSubscriptions)
+        .where(and(eq(forumSubscriptions.userId, req.user!.id), eq(forumSubscriptions.threadId, parsed.data.targetId)));
+    }
+
+    return res.json({ message: "Takipten çıkıldı" });
+  });
+
+  apiRouter.get("/saved", requireAuth, async (req: Request, res: Response) => {
+    const rows = await db
+      .select()
+      .from(forumReactions)
+      .where(and(eq(forumReactions.userId, req.user!.id), eq(forumReactions.reactionType, "save")));
+
+    return res.json({ saved: rows });
+  });
+
+  apiRouter.post("/saved", requireAuth, async (req: Request, res: Response) => {
+    const parsed = saveSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(422).json({ message: "Geçersiz veri" });
+    }
+
+    if (parsed.data.targetType === "thread") {
+      const [thread] = await db
+        .select()
+        .from(forumThreads)
+        .where(and(eq(forumThreads.id, parsed.data.targetId), eq(forumThreads.tenantId, req.tenant!.id)))
+        .limit(1);
+      if (!thread) return res.status(404).json({ message: "Konu bulunamadı" });
+    }
+
+    if (parsed.data.targetType === "post") {
+      const [post] = await db
+        .select()
+        .from(posts)
+        .where(and(eq(posts.id, parsed.data.targetId), eq(posts.tenantId, req.tenant!.id)))
+        .limit(1);
+      if (!post) return res.status(404).json({ message: "Yazı bulunamadı" });
+    }
+
+    await db
+      .insert(forumReactions)
+      .values({
+        userId: req.user!.id,
+        targetType: parsed.data.targetType,
+        targetId: parsed.data.targetId,
+        reactionType: "save",
+      })
+      .onConflictDoNothing();
+
+    return res.json({ message: "Kaydedildi" });
+  });
+
+  apiRouter.delete("/saved/:targetId", requireAuth, async (req: Request, res: Response) => {
+    await db
+      .delete(forumReactions)
+      .where(
+        and(
+          eq(forumReactions.userId, req.user!.id),
+          eq(forumReactions.targetId, req.params.targetId),
+          eq(forumReactions.reactionType, "save"),
+        ),
+      );
+
+    return res.json({ message: "Kayıt kaldırıldı" });
+  });
+
+  apiRouter.get("/users/:username/profile", async (req: Request, res: Response) => {
+    const [userRow] = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, req.params.username))
+      .limit(1);
+
+    if (!userRow) {
+      return res.status(404).json({ message: "Kullanıcı bulunamadı" });
+    }
+
+    const membership = await db
+      .select()
+      .from(tenantMembers)
+      .where(and(eq(tenantMembers.userId, userRow.id), eq(tenantMembers.tenantId, req.tenant!.id)))
+      .limit(1);
+
+    if (membership.length === 0) {
+      return res.status(404).json({ message: "Kullanıcı bu topluluğa ait değil" });
+    }
+
+    const threads = await db
+      .select()
+      .from(forumThreads)
+      .where(and(eq(forumThreads.authorId, userRow.id), eq(forumThreads.tenantId, req.tenant!.id)))
+      .orderBy(desc(forumThreads.createdAt))
+      .limit(10);
+
+    const replies = await db
+      .select({ reply: forumReplies, thread: forumThreads })
+      .from(forumReplies)
+      .leftJoin(forumThreads, eq(forumReplies.threadId, forumThreads.id))
+      .where(and(eq(forumReplies.authorId, userRow.id), eq(forumThreads.tenantId, req.tenant!.id)))
+      .orderBy(desc(forumReplies.createdAt))
+      .limit(10);
+
+    return res.json({
+      user: {
+        id: userRow.id,
+        username: userRow.username,
+        displayName: userRow.displayName,
+        bio: userRow.bio,
+        avatarUrl: userRow.avatarUrl,
+        reputationPoints: userRow.reputationPoints,
+        trustLevel: userRow.trustLevel,
+      },
+      threads,
+      replies: replies.map((row) => row.reply),
+    });
   });
 
   // ==========================================
