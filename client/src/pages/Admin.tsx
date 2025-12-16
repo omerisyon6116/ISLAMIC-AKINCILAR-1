@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,37 +23,81 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { CallToAction, EventInfo, useSiteContent } from "@/lib/site-content";
+import { CallToAction, useSiteContent } from "@/lib/site-content";
 import { Link } from "wouter";
-import { tenantHref } from "@/lib/tenant";
+import { apiBasePath, tenantHref } from "@/lib/tenant";
 import { ArrowLeft, Edit2, Plus, RotateCw, Save, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+
+type EventInfo = {
+  id: string;
+  title: string;
+  category: string | null;
+  eventDate: string | null;
+  location: string | null;
+  description: string | null;
+};
 
 const emptyEvent: Omit<EventInfo, "id"> = {
   title: "",
   category: "",
-  date: "",
+  eventDate: "",
   location: "",
   description: "",
 };
 
 export default function Admin() {
-  const { content, updateHeroCta, updateNavCta, addEvent, updateEvent, removeEvent, resetContent } =
-    useSiteContent();
+  const { content, updateHeroCta, updateNavCta, updateHeroContent, refresh } = useSiteContent();
   const [ctaDrafts, setCtaDrafts] = useState<CallToAction[]>(content.heroCtas);
   const [navDraft, setNavDraft] = useState<CallToAction>(content.navCta);
   const [newEvent, setNewEvent] = useState<Omit<EventInfo, "id">>(emptyEvent);
   const [editingEvent, setEditingEvent] = useState<EventInfo | null>(null);
   const { toast } = useToast();
 
+  const eventsQuery = useQuery<{ events: EventInfo[] }>({
+    queryKey: ["events", "admin"],
+    queryFn: async () => {
+      const res = await fetch(`${apiBasePath}/events`, { credentials: "include" });
+      if (!res.ok) throw new Error("Etkinlikler yüklenemedi");
+      return res.json();
+    },
+  });
+
+  const events = eventsQuery.data?.events ?? [];
+
+  const createEventMutation = useMutation({
+    mutationFn: async (payload: Partial<EventInfo>) => {
+      const res = await apiRequest("POST", `${apiBasePath}/admin/events`, payload);
+      return res.json();
+    },
+    onSuccess: () => eventsQuery.refetch(),
+  });
+
+  const updateEventMutation = useMutation({
+    mutationFn: async ({ id, payload }: { id: string; payload: Partial<EventInfo> }) => {
+      const res = await apiRequest("PATCH", `${apiBasePath}/admin/events/${id}`, payload);
+      return res.json();
+    },
+    onSuccess: () => eventsQuery.refetch(),
+  });
+
+  const deleteEventMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("DELETE", `${apiBasePath}/admin/events/${id}`);
+      return res.json();
+    },
+    onSuccess: () => eventsQuery.refetch(),
+  });
+
   useEffect(() => setCtaDrafts(content.heroCtas), [content.heroCtas]);
   useEffect(() => setNavDraft(content.navCta), [content.navCta]);
 
   const totalEventsLabel = useMemo(() => {
-    if (content.events.length === 0) return "Henüz etkinlik yok";
-    if (content.events.length === 1) return "1 aktif görev";
-    return `${content.events.length} aktif görev`;
-  }, [content.events.length]);
+    if (events.length === 0) return "Henüz etkinlik yok";
+    if (events.length === 1) return "1 aktif görev";
+    return `${events.length} aktif görev`;
+  }, [events.length]);
 
   const handleSaveCtas = () => {
     const hasEmpty = ctaDrafts.some((cta) => !cta.label.trim() || !cta.href.trim());
@@ -83,7 +128,15 @@ export default function Admin() {
     toast({ title: "Navigasyon güncellendi", description: "Üst menü butonu kaydedildi." });
   };
 
-  const handleAddEvent = (event: React.FormEvent<HTMLFormElement>) => {
+  const mapEventPayload = (payload: Omit<EventInfo, "id"> | EventInfo) => ({
+    title: payload.title,
+    category: payload.category || undefined,
+    description: payload.description || undefined,
+    location: payload.location || undefined,
+    eventDate: payload.eventDate ? new Date(payload.eventDate).toISOString() : undefined,
+  });
+
+  const handleAddEvent = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!newEvent.title.trim()) {
       toast({
@@ -93,7 +146,8 @@ export default function Admin() {
       });
       return;
     }
-    addEvent(newEvent);
+
+    await createEventMutation.mutateAsync(mapEventPayload(newEvent));
     setNewEvent(emptyEvent);
     toast({
       title: "Etkinlik eklendi",
@@ -101,24 +155,27 @@ export default function Admin() {
     });
   };
 
-  const handleUpdateEvent = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleUpdateEvent = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!editingEvent) return;
-    updateEvent(editingEvent.id, editingEvent);
+    await updateEventMutation.mutateAsync({ id: editingEvent.id, payload: mapEventPayload(editingEvent) });
     setEditingEvent(null);
     toast({ title: "Etkinlik güncellendi" });
   };
 
   const handleRemoveEvent = (id: string, title: string) => {
-    removeEvent(id);
-    toast({
-      title: "Etkinlik silindi",
-      description: `${title} listeden kaldırıldı.`,
+    deleteEventMutation.mutate(id, {
+      onSuccess: () => {
+        toast({
+          title: "Etkinlik silindi",
+          description: `${title} listeden kaldırıldı.`,
+        });
+      },
     });
   };
 
   const handleReset = () => {
-    resetContent();
+    refresh();
     setEditingEvent(null);
     toast({
       title: "Varsayılan içerik yüklendi",
@@ -275,8 +332,8 @@ export default function Admin() {
                 <Label htmlFor="event-date">Tarih / saat</Label>
                 <Input
                   id="event-date"
-                  value={newEvent.date}
-                  onChange={(event) => setNewEvent({ ...newEvent, date: event.target.value })}
+                  value={newEvent.eventDate ?? ""}
+                  onChange={(event) => setNewEvent({ ...newEvent, eventDate: event.target.value })}
                   placeholder="OCT 25 | 14:00"
                 />
               </div>
@@ -320,18 +377,24 @@ export default function Admin() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {content.events.length === 0 ? (
+                  {eventsQuery.isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center text-muted-foreground">
+                        Yükleniyor...
+                      </TableCell>
+                    </TableRow>
+                  ) : events.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center text-muted-foreground">
                         Hiç etkinlik yok. Yukarıdan yeni bir görev ekle.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    content.events.map((event) => (
+                    events.map((event) => (
                       <TableRow key={event.id} className="border-primary/10">
                         <TableCell className="font-medium text-primary">{event.title}</TableCell>
                         <TableCell>{event.category || "—"}</TableCell>
-                        <TableCell>{event.date || "—"}</TableCell>
+                        <TableCell>{event.eventDate || "—"}</TableCell>
                         <TableCell>{event.location || "—"}</TableCell>
                         <TableCell className="flex justify-end gap-2">
                           <Button
@@ -393,8 +456,8 @@ export default function Admin() {
                   <Label htmlFor="edit-date">Tarih / saat</Label>
                   <Input
                     id="edit-date"
-                    value={editingEvent.date}
-                    onChange={(event) => setEditingEvent({ ...editingEvent, date: event.target.value })}
+                    value={editingEvent.eventDate ?? ""}
+                    onChange={(event) => setEditingEvent({ ...editingEvent, eventDate: event.target.value })}
                   />
                 </div>
               </div>

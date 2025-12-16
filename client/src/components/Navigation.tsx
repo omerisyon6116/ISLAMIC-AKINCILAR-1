@@ -6,12 +6,14 @@ import { cn } from "@/lib/utils";
 import { useSiteContent } from "@/lib/site-content";
 import { useAuth } from "@/lib/auth";
 import { tenantBasePath, tenantHref } from "@/lib/tenant";
+import { useNotifications } from "@/lib/notifications";
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { content } = useSiteContent();
   const { user, isAuthenticated, logout } = useAuth();
+  const { notifications } = useNotifications();
   const [, setLocation] = useLocation();
 
   useEffect(() => {
@@ -28,12 +30,17 @@ export default function Navigation() {
   };
 
   const navLinks = [
-    { name: "KİMLİK", href: "#about" },
-    { name: "GÖREVLER", href: "#activities" },
-    { name: "SAHA NOTLARI", href: "#blog" },
-    { name: "VERİTABANI", href: "#knowledge" },
-    { name: "DURUŞ", href: "#energy" },
+    { name: "FORUM", href: tenantHref("/forum"), type: "route" as const },
+    { name: "KİMLİK", href: "#about", type: "anchor" as const },
+    { name: "GÖREVLER", href: "#activities", type: "anchor" as const },
+    { name: "SAHA NOTLARI", href: "#blog", type: "anchor" as const },
+    { name: "VERİTABANI", href: "#knowledge", type: "anchor" as const },
+    { name: "DURUŞ", href: "#energy", type: "anchor" as const },
+    { name: "AKIŞ", href: tenantHref("/activity"), type: "route" as const },
+    { name: "BİLDİRİMLER", href: tenantHref("/notifications"), type: "route" as const },
   ];
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   return (
     <nav
@@ -55,15 +62,28 @@ export default function Navigation() {
         </Link>
 
         <div className="hidden md:flex items-center space-x-1">
-          {navLinks.map((link) => (
-            <a
-              key={link.name}
-              href={link.href}
-              className="px-6 py-2 text-sm font-medium font-mono text-primary/70 hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/30 transition-all clip-path-cyber"
-            >
-              {link.name}
-            </a>
-          ))}
+          {navLinks.map((link) =>
+            link.type === "route" ? (
+              <Link
+                key={link.name}
+                href={link.href}
+                className="px-6 py-2 text-sm font-medium font-mono text-primary/70 hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/30 transition-all clip-path-cyber flex items-center gap-2"
+              >
+                <span>{link.name}</span>
+                {link.name === "BİLDİRİMLER" && unreadCount > 0 && (
+                  <span className="text-[10px] bg-primary text-black px-2 py-0.5">{unreadCount}</span>
+                )}
+              </Link>
+            ) : (
+              <a
+                key={link.name}
+                href={link.href}
+                className="px-6 py-2 text-sm font-medium font-mono text-primary/70 hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/30 transition-all clip-path-cyber"
+              >
+                {link.name}
+              </a>
+            ),
+          )}
           
           {isAuthenticated && (user?.role === "superadmin" || user?.role === "admin" || user?.role === "moderator") && (
             <Link
@@ -76,6 +96,12 @@ export default function Navigation() {
 
           {isAuthenticated ? (
             <div className="flex items-center gap-2 ml-4">
+              <Link
+                href={tenantHref("/saved")}
+                className="px-3 py-1 text-xs font-mono text-primary border border-primary/30 hover:border-primary/60 hover:bg-primary/10"
+              >
+                KAYITLAR
+              </Link>
               <span className="text-xs font-mono text-muted-foreground flex items-center gap-1">
                 <User className="w-3 h-3" />
                 {user?.displayName || user?.username}
@@ -108,16 +134,30 @@ export default function Navigation() {
 
       {isMobileMenuOpen && (
         <div className="md:hidden absolute top-full left-0 right-0 bg-black/95 border-b border-primary/30 p-6 flex flex-col space-y-2 animate-in slide-in-from-top-5 backdrop-blur-xl">
-          {navLinks.map((link) => (
-            <a
-              key={link.name}
-              href={link.href}
-              className="text-lg font-mono text-primary/80 hover:text-white hover:bg-primary/20 p-4 border-l-2 border-transparent hover:border-primary transition-all"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              {">"} {link.name}
-            </a>
-          ))}
+          {navLinks.map((link) =>
+            link.type === "route" ? (
+              <Link
+                key={link.name}
+                href={link.href}
+                className="text-lg font-mono text-primary/80 hover:text-white hover:bg-primary/20 p-4 border-l-2 border-transparent hover:border-primary transition-all flex items-center gap-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                {">"} {link.name}
+                {link.name === "BİLDİRİMLER" && unreadCount > 0 && (
+                  <span className="text-[10px] bg-primary text-black px-2 py-0.5">{unreadCount}</span>
+                )}
+              </Link>
+            ) : (
+              <a
+                key={link.name}
+                href={link.href}
+                className="text-lg font-mono text-primary/80 hover:text-white hover:bg-primary/20 p-4 border-l-2 border-transparent hover:border-primary transition-all"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                {">"} {link.name}
+              </a>
+            ),
+          )}
           
           {isAuthenticated && (user?.role === "superadmin" || user?.role === "admin" || user?.role === "moderator") && (
             <Link
@@ -131,6 +171,13 @@ export default function Navigation() {
 
           {isAuthenticated ? (
             <div className="pt-4 space-y-2">
+              <Link
+                href={tenantHref("/saved")}
+                className="text-lg font-mono text-primary hover:text-white hover:bg-primary/20 p-4 border-l-2 border-transparent hover:border-primary transition-all"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                {">"} KAYITLAR
+              </Link>
               <p className="text-xs font-mono text-muted-foreground px-4">
                 Giriş yapan: {user?.displayName || user?.username}
               </p>

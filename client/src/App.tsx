@@ -9,6 +9,16 @@ import Home from "@/pages/Home";
 import Admin from "@/pages/Admin";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import EventDetail from "@/pages/EventDetail";
+import PostDetail from "@/pages/PostDetail";
+import Posts from "@/pages/Posts";
+import ForumHome from "@/pages/ForumHome";
+import ForumCategory from "@/pages/ForumCategory";
+import ForumThread from "@/pages/ForumThread";
+import Activity from "@/pages/Activity";
+import NotificationsPage from "@/pages/Notifications";
+import Profile from "@/pages/Profile";
+import Saved from "@/pages/Saved";
 import { SiteContentProvider } from "@/lib/site-content";
 import { AuthProvider, RequireAuth } from "@/lib/auth";
 import { tenantBasePath } from "@/lib/tenant";
@@ -29,6 +39,26 @@ function Router() {
       <Route path={tenantBasePath} component={Home} />
       <Route path={`${tenantBasePath}/login`} component={Login} />
       <Route path={`${tenantBasePath}/register`} component={Register} />
+      <Route path={`${tenantBasePath}/forum`} component={ForumHome} />
+      <Route path={`${tenantBasePath}/activity`} component={Activity} />
+      <Route path={`${tenantBasePath}/notifications`} component={NotificationsPage} />
+      <Route path={`${tenantBasePath}/saved`} component={Saved} />
+      <Route path={`${tenantBasePath}/u/:username`}>
+        {(params) => <Profile username={params.username} />}
+      </Route>
+      <Route path={`${tenantBasePath}/forum/category/:id`}>
+        {(params) => <ForumCategory categoryId={params.id} />}
+      </Route>
+      <Route path={`${tenantBasePath}/forum/thread/:id`}>
+        {(params) => <ForumThread threadId={params.id} />}
+      </Route>
+      <Route path={`${tenantBasePath}/events/:id`}>
+        {(params) => <EventDetail eventId={params.id} />}
+      </Route>
+      <Route path={`${tenantBasePath}/posts`} component={Posts} />
+      <Route path={`${tenantBasePath}/posts/:id`}>
+        {(params) => <PostDetail postId={params.id} />}
+      </Route>
       <Route path={`${tenantBasePath}/admin`}>
         <RequireAuth requiredRoles={["superadmin", "admin", "moderator"]}>
           <Admin />

@@ -1,5 +1,6 @@
 import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
+import ForumShowcase from "@/components/ForumShowcase";
 import About from "@/components/About";
 import Activities from "@/components/Activities";
 import BlogSection from "@/components/BlogSection";
@@ -13,6 +14,7 @@ export default function Home() {
       <Navigation />
       <main>
         <Hero />
+        <ForumShowcase />
         <About />
         <Activities />
         <BlogSection />
