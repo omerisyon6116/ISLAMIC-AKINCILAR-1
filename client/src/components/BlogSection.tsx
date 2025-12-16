@@ -1,37 +1,43 @@
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Calendar, ArrowRight, Hash, Bookmark } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { apiBasePath, tenantHref } from "@/lib/tenant";
+import { Link } from "wouter";
 
-// Mock Data for Blog Posts
-const blogPosts = [
-  {
-    id: 1,
-    title: "SİBER GÜVENLİK VE AHLAK ATÖLYESİ TAMAMLANDI",
-    date: "14 EKİM 2025",
-    category: "ATÖLYE",
-    excerpt: "Teknolojiyi sadece tüketen değil, güvenli ve ahlaklı bir şekilde yöneten bir nesil için ilk adım atıldı. Atölye notları ve çıktılar sisteme yüklendi.",
-    readTime: "3 DK"
-  },
-  {
-    id: 2,
-    title: "SABAH NAMAZI VE DOĞA YÜRÜYÜŞÜ: SEKTÖR MAVİ",
-    date: "08 EKİM 2025",
-    category: "ETKİNLİK",
-    excerpt: "Bedeni ve ruhu aynı anda diri tutmak için şafak vaktinde yola düştük. Tefekkür ve hareketin birleştiği o anlardan kareler.",
-    readTime: "2 DK"
-  },
-  {
-    id: 3,
-    title: "DİJİTAL ÇAĞDA İRADE YÖNETİMİ: HAFTALIK HALKA",
-    date: "01 EKİM 2025",
-    category: "HALKA",
-    excerpt: "Algoritmaların değil, kendi irademizin peşinden gitmek. Haftalık sohbetimizde modern dikkat dağınıklığına karşı nebevi duruşu konuştuk.",
-    readTime: "5 DK"
+type Post = {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  status: string;
+  publishedAt: string | null;
+  createdAt: string;
+};
+
+function formatDate(value: string | null) {
+  if (!value) return "";
+  try {
+    return new Date(value).toLocaleDateString("tr-TR", { year: "numeric", month: "short", day: "numeric" });
+  } catch (error) {
+    console.error(error);
+    return value;
   }
-];
+}
 
 export default function BlogSection() {
+  const { data } = useQuery<{ posts: Post[] }>({
+    queryKey: ["posts", apiBasePath],
+    queryFn: async () => {
+      const res = await fetch(`${apiBasePath}/posts`);
+      if (!res.ok) throw new Error("Blog yazıları yüklenemedi");
+      return res.json();
+    },
+  });
+
+  const posts = useMemo(() => (data?.posts ?? []).slice(0, 3), [data]);
+
   return (
     <section id="blog" className="py-24 bg-background relative overflow-hidden border-t border-primary/20">
       {/* Background Grid */}
@@ -54,7 +60,7 @@ export default function BlogSection() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
-          {blogPosts.map((post, index) => (
+          {posts.map((post, index) => (
             <motion.div
               key={post.id}
               initial={{ opacity: 0, y: 20 }}
@@ -66,35 +72,36 @@ export default function BlogSection() {
               <article className="h-full flex flex-col bg-card/30 border border-white/10 hover:border-primary/50 transition-all duration-300 relative overflow-hidden clip-path-cyber">
                 {/* Hover Glow Effect */}
                 <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                
+
                 <div className="p-6 relative z-10 flex flex-col h-full">
                   <div className="flex justify-between items-start mb-4">
                     <Badge variant="outline" className="rounded-none border-secondary text-secondary font-mono text-xs px-2 py-0.5">
-                      {post.category}
+                      {post.status.toUpperCase()}
                     </Badge>
                     <span className="text-xs font-mono text-muted-foreground flex items-center gap-1">
-                      <Calendar className="w-3 h-3" /> {post.date}
+                      <Calendar className="w-3 h-3" /> {formatDate(post.publishedAt || post.createdAt)}
                     </span>
                   </div>
 
                   <h3 className="text-xl font-bold font-heading text-white mb-3 leading-tight group-hover:text-primary transition-colors">
                     {post.title}
                   </h3>
-                  
+
                   <p className="text-muted-foreground text-sm leading-relaxed mb-6 flex-grow font-sans border-l border-white/10 pl-3">
-                    {post.excerpt}
+                    {post.excerpt || "Detaylar için yazıya göz at."}
                   </p>
 
                   <div className="pt-4 border-t border-white/5 flex items-center justify-between mt-auto">
-                    <span className="text-xs font-mono text-muted-foreground">
-                      OKUMA: {post.readTime}
-                    </span>
-                    <button className="text-primary text-sm font-bold font-mono flex items-center gap-2 group-hover:gap-3 transition-all">
+                    <span className="text-xs font-mono text-muted-foreground">YAYIN</span>
+                    <Link
+                      href={tenantHref(`/posts/${post.slug || post.id}`)}
+                      className="text-primary text-sm font-bold font-mono flex items-center gap-2 group-hover:gap-3 transition-all"
+                    >
                       İNCELE <ArrowRight className="w-4 h-4" />
-                    </button>
+                    </Link>
                   </div>
                 </div>
-                
+
                 {/* Decorative Corners */}
                 <div className="absolute top-0 right-0 w-4 h-4 border-t border-r border-primary/30 group-hover:border-primary transition-colors" />
                 <div className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-primary/30 group-hover:border-primary transition-colors" />
@@ -104,10 +111,13 @@ export default function BlogSection() {
         </div>
 
         <div className="mt-12 text-center">
-          <button className="inline-flex items-center gap-2 px-8 py-3 border border-white/20 hover:border-primary hover:bg-primary/10 hover:text-primary transition-all font-mono text-sm tracking-widest text-muted-foreground">
+          <Link
+            href={tenantHref("/posts")}
+            className="inline-flex items-center gap-2 px-8 py-3 border border-white/20 hover:border-primary hover:bg-primary/10 hover:text-primary transition-all font-mono text-sm tracking-widest text-muted-foreground"
+          >
             <Bookmark className="w-4 h-4" />
             TÜM KAYITLARI GÖSTER
-          </button>
+          </Link>
         </div>
       </div>
     </section>
