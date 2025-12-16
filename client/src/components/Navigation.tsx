@@ -11,6 +11,8 @@ import { tenantBasePath, tenantHref, apiBasePath } from "@/lib/tenant";
 import { useQuery } from "@tanstack/react-query";
 import { apiBasePath, tenantBasePath, tenantHref } from "@/lib/tenant";
 import { tenantBasePath, tenantHref } from "@/lib/tenant";
+import { useQuery } from "@tanstack/react-query";
+import { apiBasePath } from "@/lib/tenant";
 import { useNotifications } from "@/lib/notifications";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -24,6 +26,7 @@ export default function Navigation() {
   const { notifications } = useNotifications();
   const [, setLocation] = useLocation();
 
+  const { data: notificationData } = useQuery<{ notifications: { id: string; isRead: boolean }[] }>({
   const { data: notificationsData } = useQuery<{ notifications: { id: string; isRead: boolean }[] }>({
     queryKey: ["notifications", "nav"],
     enabled: isAuthenticated,
@@ -32,6 +35,7 @@ export default function Navigation() {
     queryFn: async () => {
       const res = await fetch(`${apiBasePath}/notifications`, { credentials: "include" });
       if (res.status === 401) return { notifications: [] };
+      if (!res.ok) throw new Error("Bildirim alınamadı");
       if (!res.ok) throw new Error("Bildirimler yüklenemedi");
       return res.json();
     },
@@ -39,6 +43,7 @@ export default function Navigation() {
     refetchInterval: 15000,
   });
 
+  const unreadCount = notificationData?.notifications.filter((n) => !n.isRead).length || 0;
   const unreadCount = notificationsData?.notifications?.filter((n) => !n.isRead)?.length ?? 0;
   const notificationsQuery = useQuery<{ notifications: any[] }>({
     queryKey: ["notifications", apiBasePath],
@@ -122,6 +127,7 @@ export default function Navigation() {
                 href={link.href}
                 className="px-6 py-2 text-sm font-medium font-mono text-primary/70 hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/30 transition-all clip-path-cyber"
               >
+                {link.name}
                 <span className="flex items-center gap-2">
                   {link.name}
                   {link.badge && link.badge > 0 && (
@@ -148,6 +154,22 @@ export default function Navigation() {
                 className="px-6 py-2 text-sm font-medium font-mono text-primary/70 hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/30 transition-all clip-path-cyber"
               >
                 {link.name}
+              </a>
+              ),
+          )}
+
+          {isAuthenticated && (
+            <Link
+              href={tenantHref("/notifications")}
+              className="relative px-5 py-2 text-xs font-mono tracking-widest text-primary border border-primary/30 hover:border-primary/60 hover:bg-primary/10 transition-all clip-path-cyber"
+            >
+              BİLDİRİMLER
+              {unreadCount > 0 && (
+                <span className="ml-2 inline-flex items-center justify-center text-[10px] bg-secondary text-black px-2 py-0.5">
+                  {unreadCount}
+                </span>
+              )}
+            </Link>
                 <span className="inline-flex items-center gap-2">
                   {link.name}
                   {typeof link.badge === "number" && link.badge > 0 && (
@@ -173,6 +195,15 @@ export default function Navigation() {
                 href={tenantHref(`/u/${user?.username}`)}
                 className="text-xs font-mono text-muted-foreground flex items-center gap-1 hover:text-primary"
               >
+                <User className="w-3 h-3" />
+                {user?.displayName || user?.username}
+              </Link>
+              <Link
+                href={tenantHref("/saved")}
+                className="text-[11px] font-mono text-primary hover:text-white"
+              >
+                Kaydedilenler
+              </Link>
                 <User className="w-3 h-3" />
                 {user?.displayName || user?.username}
               </Link>
@@ -279,6 +310,7 @@ export default function Navigation() {
                 className="text-lg font-mono text-primary/80 hover:text-white hover:bg-primary/20 p-4 border-l-2 border-transparent hover:border-primary transition-all"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
+                {">"} {link.name}
                 <span className="flex items-center gap-2">
                   {">"} {link.name}
                   {link.badge && link.badge > 0 && (
@@ -308,6 +340,20 @@ export default function Navigation() {
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 {">"} {link.name}
+              </a>
+            ),
+          )}
+
+          {isAuthenticated && (
+            <Link
+              href={tenantHref("/notifications")}
+              className="text-lg font-mono text-primary/80 hover:text-white hover:bg-primary/20 p-4 border-l-2 border-transparent hover:border-primary transition-all"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              {">"} BİLDİRİMLER {unreadCount > 0 && <span className="ml-2 text-secondary">({unreadCount})</span>}
+            </Link>
+          )}
+
                 <span className="inline-flex items-center gap-2">
                   {">"} {link.name}
                   {typeof link.badge === "number" && link.badge > 0 && (
@@ -331,6 +377,12 @@ export default function Navigation() {
           {isAuthenticated ? (
             <div className="pt-4 space-y-2">
               <Link
+                href={tenantHref(`/u/${user?.username}`)}
+                className="text-xs font-mono text-muted-foreground px-4 block hover:text-primary"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Giriş yapan: {user?.displayName || user?.username}
+              </Link>
                 href={tenantHref("/saved")}
                 className="text-lg font-mono text-primary hover:text-white hover:bg-primary/20 p-4 border-l-2 border-transparent hover:border-primary transition-all"
                 onClick={() => setIsMobileMenuOpen(false)}

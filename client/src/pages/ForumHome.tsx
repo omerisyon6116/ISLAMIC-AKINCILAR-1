@@ -9,6 +9,9 @@ type Category = {
   id: string;
   name: string;
   description: string | null;
+  lastThread?: Thread | null;
+  threadsTotal?: number;
+  repliesTotal?: number;
   lastThread?: {
     id: string;
     title: string;
@@ -99,6 +102,14 @@ export default function ForumHome() {
                     <ArrowRight className="w-4 h-4 text-primary" />
                   </div>
                   <p className="text-sm text-muted-foreground mt-2">{category.description}</p>
+                  <div className="text-xs text-muted-foreground mt-3 flex gap-4">
+                    <span>{category.threadsTotal ?? 0} konu</span>
+                    <span>{category.repliesTotal ?? 0} yanıt</span>
+                  </div>
+                  {category.lastThread && (
+                    <div className="mt-3 border-t border-white/10 pt-3 text-xs text-foreground flex items-center justify-between">
+                      <span className="truncate">Son: {category.lastThread.title}</span>
+                      <ArrowRight className="w-3 h-3 text-primary" />
                   <p className="text-xs text-muted-foreground mt-3">
                     {category.lastThread ? (
                       <span>

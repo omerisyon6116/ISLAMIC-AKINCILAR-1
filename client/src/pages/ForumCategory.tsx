@@ -42,6 +42,7 @@ export default function ForumCategory({ categoryId }: { categoryId: string }) {
     },
   });
 
+  const threads = data?.threads ?? [];
   const { data: followsData } = useQuery<{ categories: Category[] }>({
     queryKey: ["forum", "follows"],
     enabled: isAuthenticated,

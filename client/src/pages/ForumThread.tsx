@@ -18,6 +18,7 @@ type ThreadResponse = {
     body: string;
     isLocked: boolean;
     repliesCount: number;
+    isFollowed?: boolean;
     viewsCount: number;
     author?: { displayName?: string | null; username: string };
     createdAt: string;
@@ -42,6 +43,8 @@ export default function ForumThread({ threadId }: { threadId: string }) {
   const queryClient = useQueryClient();
   const [body, setBody] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [following, setFollowing] = useState(false);
   const [togglingSub, setTogglingSub] = useState(false);
   const [togglingSave, setTogglingSave] = useState(false);
 
@@ -93,6 +96,12 @@ export default function ForumThread({ threadId }: { threadId: string }) {
 
   const thread = data?.thread;
   const replies = data?.replies ?? [];
+
+  const toggleFollow = async () => {
+    if (!thread) return;
+    setFollowing(true);
+    const method = thread.isFollowed ? "DELETE" : "POST";
+    await fetch(`${apiBasePath}/forum/threads/${thread.id}/follow`, {
   const isFollowing = (followsData?.threads ?? []).some((t) => t.id === threadId);
   const isSaved = (savedData?.threads ?? []).some((t) => t.id === threadId);
 
@@ -164,6 +173,8 @@ export default function ForumThread({ threadId }: { threadId: string }) {
       credentials: "include",
       headers: { "Content-Type": "application/json" },
     });
+    setFollowing(false);
+    queryClient.invalidateQueries({ queryKey: ["forum", "thread", threadId] });
     setTogglingSub(false);
     if (res.ok) {
       queryClient.invalidateQueries({ queryKey: ["forum", "thread", threadId] });
@@ -172,6 +183,19 @@ export default function ForumThread({ threadId }: { threadId: string }) {
 
   const toggleSave = async () => {
     if (!thread) return;
+    setSaving(true);
+    if (thread.isSaved) {
+      await fetch(`${apiBasePath}/saved/${thread.id}`, { method: "DELETE", credentials: "include" });
+    } else {
+      await fetch(`${apiBasePath}/saved`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetType: "thread", targetId: thread.id }),
+      });
+    }
+    setSaving(false);
+    queryClient.invalidateQueries({ queryKey: ["forum", "thread", threadId] });
     setTogglingSave(true);
     const method = thread.isSaved ? "DELETE" : "POST";
     const res = await fetch(`${apiBasePath}/forum/threads/${threadId}/save`, {
@@ -193,6 +217,34 @@ export default function ForumThread({ threadId }: { threadId: string }) {
           <article className="border border-primary/30 bg-card/40 p-5 space-y-3">
             <div className="text-xs text-muted-foreground flex items-center gap-2">
               <MessageCircle className="w-4 h-4" />
+              <span>{thread.author?.displayName || thread.author?.username}</span>
+              <span>• {new Date(thread.createdAt).toLocaleString("tr-TR")}</span>
+              {thread.repliesCount === 0 && <span className="text-primary">Cevap bekliyor</span>}
+            </div>
+            <h1 className="text-3xl font-heading text-white">{thread.title}</h1>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{thread.body}</p>
+            {isAuthenticated && (
+              <div className="flex items-center gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={toggleFollow}
+                  disabled={following}
+                  className="border-primary/50 text-primary"
+                >
+                  {thread.isFollowed ? "Takipten Çık" : "Takip Et"}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={toggleSave}
+                  disabled={saving}
+                  className="border-secondary/50 text-secondary"
+                >
+                  {thread.isSaved ? "Kaydedildi" : "Kaydet"}
+                </Button>
+              </div>
+            )}
               {thread.author ? (
                 <Link href={tenantHref(`/u/${thread.author.username}`)} className="hover:text-primary">
                   {thread.author.displayName || thread.author.username}

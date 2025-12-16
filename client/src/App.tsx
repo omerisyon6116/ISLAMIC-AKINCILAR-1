@@ -45,6 +45,7 @@ function Router() {
       <Route path={`${tenantBasePath}/register`} component={Register} />
       <Route path={`${tenantBasePath}/forum`} component={ForumHome} />
       <Route path={`${tenantBasePath}/activity`} component={Activity} />
+      <Route path={`${tenantBasePath}/notifications`} component={Notifications} />
       <Route path={`${tenantBasePath}/notifications`} component={NotificationsPage} />
       <Route path={`${tenantBasePath}/saved`} component={Saved} />
       <Route path={`${tenantBasePath}/u/:username`}>
@@ -71,6 +72,7 @@ function Router() {
       </Route>
       <Route path={`${tenantBasePath}/forum/thread/:id`}>
         {(params) => <ForumThread threadId={params.id} />}
+      </Route>
       <Route path={`${tenantBasePath}/u/:username`}>
         {(params) => <Profile username={params.username} />}
       </Route>

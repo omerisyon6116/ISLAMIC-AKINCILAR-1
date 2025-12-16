@@ -5,6 +5,7 @@ import About from "@/components/About";
 import ForumShowcase from "@/components/ForumShowcase";
 import Activities from "@/components/Activities";
 import BlogSection from "@/components/BlogSection";
+import ForumShowcase from "@/components/ForumShowcase";
 import Knowledge from "@/components/Knowledge";
 import YouthEnergy from "@/components/YouthEnergy";
 import Footer from "@/components/Footer";
