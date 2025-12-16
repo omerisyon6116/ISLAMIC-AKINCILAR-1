@@ -6,6 +6,10 @@ import { Link } from "wouter";
 import { ArrowLeft, Calendar } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { apiBasePath, tenantHref } from "@/lib/tenant";
+import { Link } from "wouter";
+import { ArrowLeft, Calendar } from "lucide-react";
 
 type Post = {
   id: string;
@@ -56,6 +60,7 @@ export default function PostDetail({ postId }: { postId: string }) {
     queryClient.invalidateQueries({ queryKey: ["saved", "posts"] });
     queryClient.invalidateQueries({ queryKey: ["saved"] });
   };
+  const post = data?.post;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -89,6 +94,7 @@ export default function PostDetail({ postId }: { postId: string }) {
                 )}
                 <span className="font-mono px-2 py-1 border border-primary/30 text-primary">{post.status}</span>
               </div>
+              <span className="font-mono px-2 py-1 border border-primary/30 text-primary">{post.status}</span>
             </div>
             <h1 className="text-3xl font-heading font-bold text-white">{post.title}</h1>
             <p className="text-muted-foreground">{post.excerpt}</p>

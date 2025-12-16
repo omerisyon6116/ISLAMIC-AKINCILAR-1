@@ -60,11 +60,31 @@ export default function ForumCategory({ categoryId }: { categoryId: string }) {
     const method = isFollowingCategory ? "DELETE" : "POST";
     await fetch(`${apiBasePath}/forum/follows`, {
       method,
+  const threads = data?.threads ?? [];
+
+  const { data: followData, refetch: refetchFollow } = useQuery<{ follows: { targetId: string }[] }>({
+    queryKey: ["follows", "category", categoryId],
+    queryFn: async () => {
+      const res = await fetch(`${apiBasePath}/follows?targetType=category&targetId=${categoryId}`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Takip bilgisi alınamadı");
+      return res.json();
+    },
+    enabled: isAuthenticated,
+  });
+
+  const isFollowing = Boolean(followData?.follows?.length);
+
+  const toggleFollow = async () => {
+    await fetch(`${apiBasePath}/follows`, {
+      method: isFollowing ? "DELETE" : "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify({ targetType: "category", targetId: categoryId }),
     });
     queryClient.invalidateQueries({ queryKey: ["forum", "follows"] });
+    refetchFollow();
   };
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -104,6 +124,22 @@ export default function ForumCategory({ categoryId }: { categoryId: string }) {
                 {isFollowingCategory ? "Takipten çık" : "Kategoriyi takip et"}
               </Button>
             )}
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-3xl font-heading text-white">{data.category.name}</h1>
+              {isAuthenticated && (
+                <Button
+                  variant="outline"
+                  className="border-primary text-primary"
+                  size="sm"
+                  type="button"
+                  onClick={toggleFollow}
+                >
+                  {isFollowing ? "Takip ediliyor" : "Takip et"}
+                </Button>
+              )}
+            </div>
+            <h1 className="text-3xl font-heading text-white">{data.category.name}</h1>
+            <p className="text-muted-foreground">{data.category.description}</p>
           </div>
         )}
 
@@ -146,6 +182,15 @@ export default function ForumCategory({ categoryId }: { categoryId: string }) {
                       Cevap bekliyor
                     </span>
                   )}
+                  <div className="flex items-center gap-2">
+                    <p className="text-white text-lg">{thread.title}</p>
+                    {thread.repliesCount === 0 && (
+                      <span className="text-[11px] text-primary border border-primary/40 px-2 py-0.5">Cevap bekliyor</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(thread.createdAt).toLocaleString("tr-TR")} • {thread.repliesCount} yanıt
+                  </p>
                 </div>
                 <div className="text-sm text-primary flex items-center gap-1">
                   {thread.repliesCount} yanıt <ArrowRight className="w-4 h-4" />
