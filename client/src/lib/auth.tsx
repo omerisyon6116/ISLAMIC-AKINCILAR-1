@@ -12,6 +12,7 @@ interface User {
   displayName: string | null;
   email: string;
   role: string;
+  tenantRole?: string;
   status: string;
   bio: string | null;
   avatarUrl: string | null;
