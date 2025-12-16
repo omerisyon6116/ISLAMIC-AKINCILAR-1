@@ -42,6 +42,24 @@ export default function ForumCategory({ categoryId }: { categoryId: string }) {
     },
   });
 
+  const { data: followsData } = useQuery<{ categories: Category[] }>({
+    queryKey: ["forum", "follows"],
+    enabled: isAuthenticated,
+    queryFn: async () => {
+      const res = await fetch(`${apiBasePath}/forum/follows`, { credentials: "include" });
+      if (!res.ok) throw new Error("Takipler alınamadı");
+      return res.json();
+    },
+  });
+
+  const threads = data?.threads ?? [];
+  const isFollowingCategory = (followsData?.categories ?? []).some((c) => c.id === categoryId);
+
+  const toggleFollow = async () => {
+    if (!isAuthenticated) return;
+    const method = isFollowingCategory ? "DELETE" : "POST";
+    await fetch(`${apiBasePath}/forum/follows`, {
+      method,
   const threads = data?.threads ?? [];
 
   const { data: followData, refetch: refetchFollow } = useQuery<{ follows: { targetId: string }[] }>({
@@ -65,6 +83,7 @@ export default function ForumCategory({ categoryId }: { categoryId: string }) {
       credentials: "include",
       body: JSON.stringify({ targetType: "category", targetId: categoryId }),
     });
+    queryClient.invalidateQueries({ queryKey: ["forum", "follows"] });
     refetchFollow();
   };
 
@@ -93,6 +112,18 @@ export default function ForumCategory({ categoryId }: { categoryId: string }) {
         {data && (
           <div className="space-y-2">
             <p className="text-sm font-mono text-primary">FORUM</p>
+            <h1 className="text-3xl font-heading text-white">{data.category.name}</h1>
+            <p className="text-muted-foreground">{data.category.description}</p>
+            {isAuthenticated && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={toggleFollow}
+                className="border-primary/40 text-primary"
+              >
+                {isFollowingCategory ? "Takipten çık" : "Kategoriyi takip et"}
+              </Button>
+            )}
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-3xl font-heading text-white">{data.category.name}</h1>
               {isAuthenticated && (
@@ -146,6 +177,11 @@ export default function ForumCategory({ categoryId }: { categoryId: string }) {
                 <div className="space-y-1">
                   <p className="text-white text-lg">{thread.title}</p>
                   <p className="text-xs text-muted-foreground">{new Date(thread.createdAt).toLocaleString("tr-TR")}</p>
+                  {thread.repliesCount === 0 && (
+                    <span className="text-[10px] text-destructive border border-destructive/40 px-2 py-1 inline-block">
+                      Cevap bekliyor
+                    </span>
+                  )}
                   <div className="flex items-center gap-2">
                     <p className="text-white text-lg">{thread.title}</p>
                     {thread.repliesCount === 0 && (

@@ -16,6 +16,9 @@ import ForumHome from "@/pages/ForumHome";
 import ForumCategory from "@/pages/ForumCategory";
 import ForumThread from "@/pages/ForumThread";
 import Activity from "@/pages/Activity";
+import Notifications from "@/pages/Notifications";
+import Saved from "@/pages/Saved";
+import Profile from "@/pages/Profile";
 import NotificationsPage from "@/pages/Notifications";
 import Notifications from "@/pages/Notifications";
 import Profile from "@/pages/Profile";
@@ -63,6 +66,11 @@ function Router() {
           <Saved />
         </RequireAuth>
       </Route>
+      <Route path={`${tenantBasePath}/forum/category/:id`}>
+        {(params) => <ForumCategory categoryId={params.id} />}
+      </Route>
+      <Route path={`${tenantBasePath}/forum/thread/:id`}>
+        {(params) => <ForumThread threadId={params.id} />}
       <Route path={`${tenantBasePath}/u/:username`}>
         {(params) => <Profile username={params.username} />}
       </Route>
@@ -72,6 +80,9 @@ function Router() {
       <Route path={`${tenantBasePath}/posts`} component={Posts} />
       <Route path={`${tenantBasePath}/posts/:id`}>
         {(params) => <PostDetail postId={params.id} />}
+      </Route>
+      <Route path={`${tenantBasePath}/u/:username`}>
+        {(params) => <Profile username={params.username} />}
       </Route>
       <Route path={`${tenantBasePath}/admin`}>
         <RequireAuth requiredRoles={["superadmin", "admin"]}>

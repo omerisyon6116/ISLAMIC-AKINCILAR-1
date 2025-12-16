@@ -17,6 +17,8 @@ type ThreadResponse = {
     title: string;
     body: string;
     isLocked: boolean;
+    repliesCount: number;
+    viewsCount: number;
     author?: { displayName?: string | null; username: string };
     createdAt: string;
     repliesCount: number;
@@ -52,6 +54,26 @@ export default function ForumThread({ threadId }: { threadId: string }) {
     },
   });
 
+  const { data: followsData } = useQuery<{ threads: { id: string }[] }>({
+    queryKey: ["forum", "follows"],
+    enabled: isAuthenticated,
+    queryFn: async () => {
+      const res = await fetch(`${apiBasePath}/forum/follows`, { credentials: "include" });
+      if (!res.ok) throw new Error("Takipler alınamadı");
+      return res.json();
+    },
+  });
+
+  const { data: savedData } = useQuery<{ threads: { id: string }[] }>({
+    queryKey: ["saved", "threads"],
+    enabled: isAuthenticated,
+    queryFn: async () => {
+      const res = await fetch(`${apiBasePath}/saved`, { credentials: "include" });
+      if (!res.ok) throw new Error("Kayıtlar alınamadı");
+      return res.json();
+    },
+  });
+
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!body.trim()) return;
@@ -71,6 +93,14 @@ export default function ForumThread({ threadId }: { threadId: string }) {
 
   const thread = data?.thread;
   const replies = data?.replies ?? [];
+  const isFollowing = (followsData?.threads ?? []).some((t) => t.id === threadId);
+  const isSaved = (savedData?.threads ?? []).some((t) => t.id === threadId);
+
+  const toggleFollow = async () => {
+    if (!isAuthenticated) return;
+    const method = isFollowing ? "DELETE" : "POST";
+    await fetch(`${apiBasePath}/forum/follows`, {
+      method,
 
   const { data: followData, refetch: refetchFollow } = useQuery<{ follows: { targetId: string }[] }>({
     queryKey: ["follows", "thread", threadId],
@@ -104,6 +134,14 @@ export default function ForumThread({ threadId }: { threadId: string }) {
       credentials: "include",
       body: JSON.stringify({ targetType: "thread", targetId: threadId }),
     });
+    queryClient.invalidateQueries({ queryKey: ["forum", "follows"] });
+  };
+
+  const toggleSave = async () => {
+    if (!isAuthenticated) return;
+    const method = isSaved ? "DELETE" : "POST";
+    await fetch(`${apiBasePath}/saved`, {
+      method,
     refetchFollow();
   };
 
@@ -114,6 +152,8 @@ export default function ForumThread({ threadId }: { threadId: string }) {
       credentials: "include",
       body: JSON.stringify({ targetType: "thread", targetId: threadId }),
     });
+    queryClient.invalidateQueries({ queryKey: ["saved", "threads"] });
+    queryClient.invalidateQueries({ queryKey: ["saved"] });
     refetchSaved();
   const toggleSubscribe = async () => {
     if (!thread) return;
@@ -151,6 +191,34 @@ export default function ForumThread({ threadId }: { threadId: string }) {
       <main className="container mx-auto px-6 py-16 space-y-6">
         {thread && (
           <article className="border border-primary/30 bg-card/40 p-5 space-y-3">
+            <div className="text-xs text-muted-foreground flex items-center gap-2">
+              <MessageCircle className="w-4 h-4" />
+              {thread.author ? (
+                <Link href={tenantHref(`/u/${thread.author.username}`)} className="hover:text-primary">
+                  {thread.author.displayName || thread.author.username}
+                </Link>
+              ) : (
+                <span>{thread.author?.displayName || thread.author?.username}</span>
+              )}
+              <span>• {new Date(thread.createdAt).toLocaleString("tr-TR")}</span>
+            </div>
+            <h1 className="text-3xl font-heading text-white">{thread.title}</h1>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{thread.body}</p>
+            {thread.repliesCount === 0 && (
+              <span className="text-[11px] text-destructive border border-destructive/40 px-2 py-1 inline-block">
+                Cevap bekliyor
+              </span>
+            )}
+            <div className="flex items-center gap-2 flex-wrap">
+              {isAuthenticated && (
+                <>
+                  <Button variant="outline" size="sm" onClick={toggleFollow} className="border-primary/50 text-primary">
+                    {isFollowing ? "Takibi bırak" : "Konuyu takip et"}
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={toggleSave} className="border-primary/50 text-primary">
+                    {isSaved ? "Kaydedildi" : "Kaydet"}
+                  </Button>
+                </>
             <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
               <MessageCircle className="w-4 h-4" />
               <Link href={tenantHref(`/u/${thread.author?.username}`)} className="text-primary">
@@ -232,6 +300,13 @@ export default function ForumThread({ threadId }: { threadId: string }) {
             <div key={reply.id} className="border border-primary/20 bg-card/40 p-4 space-y-2">
               <div className="text-xs text-muted-foreground flex items-center gap-2">
                 <MessageCircle className="w-3 h-3" />
+                {reply.author ? (
+                  <Link href={tenantHref(`/u/${reply.author.username}`)} className="hover:text-primary">
+                    {reply.author.displayName || reply.author.username}
+                  </Link>
+                ) : (
+                  <span>{reply.author?.displayName || reply.author?.username}</span>
+                )}
                 <Link href={tenantHref(`/u/${reply.author?.username}`)} className="text-primary">
                   {reply.author?.displayName || reply.author?.username}
                 </Link>

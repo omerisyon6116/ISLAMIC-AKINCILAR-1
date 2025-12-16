@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useSiteContent } from "@/lib/site-content";
 import { useAuth } from "@/lib/auth";
+import { tenantBasePath, tenantHref, apiBasePath } from "@/lib/tenant";
+import { useQuery } from "@tanstack/react-query";
 import { apiBasePath, tenantBasePath, tenantHref } from "@/lib/tenant";
 import { tenantBasePath, tenantHref } from "@/lib/tenant";
 import { useNotifications } from "@/lib/notifications";
@@ -22,6 +24,9 @@ export default function Navigation() {
   const { notifications } = useNotifications();
   const [, setLocation] = useLocation();
 
+  const { data: notificationsData } = useQuery<{ notifications: { id: string; isRead: boolean }[] }>({
+    queryKey: ["notifications", "nav"],
+    enabled: isAuthenticated,
   const { data: notificationsData } = useQuery<{ notifications: { id: string; isRead: boolean }[] | undefined } | null>({
     queryKey: ["notifications", apiBasePath],
     queryFn: async () => {
@@ -42,6 +47,10 @@ export default function Navigation() {
       if (!res.ok) throw new Error("Bildirimler alınamadı");
       return res.json();
     },
+    refetchInterval: 30000,
+  });
+
+  const unreadCount = notificationsData?.notifications.filter((n) => !n.isRead).length ?? 0;
     enabled: isAuthenticated,
   });
 
@@ -78,6 +87,7 @@ export default function Navigation() {
     { name: "VERİTABANI", href: "#knowledge", type: "anchor" as const },
     { name: "DURUŞ", href: "#energy", type: "anchor" as const },
     { name: "AKIŞ", href: tenantHref("/activity"), type: "route" as const },
+    { name: "BİLDİRİMLER", href: tenantHref("/notifications"), type: "route" as const, badge: unreadCount },
     { name: "BİLDİRİMLER", href: tenantHref("/notifications"), type: "route" as const },
     { name: "BİLDİRİMLER", href: tenantHref("/notifications"), type: "route" as const, badge: unreadCount },
     { name: "AKIŞ", href: tenantHref("/activity"), type: "route" as const },
@@ -110,6 +120,12 @@ export default function Navigation() {
               <Link
                 key={link.name}
                 href={link.href}
+                className="px-6 py-2 text-sm font-medium font-mono text-primary/70 hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/30 transition-all clip-path-cyber"
+              >
+                <span className="flex items-center gap-2">
+                  {link.name}
+                  {link.badge && link.badge > 0 && (
+                    <span className="text-[10px] px-2 py-0.5 bg-primary text-black font-bold">{link.badge}</span>
                 className="px-6 py-2 text-sm font-medium font-mono text-primary/70 hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/30 transition-all clip-path-cyber flex items-center gap-2"
               >
                 <span>{link.name}</span>
@@ -154,6 +170,18 @@ export default function Navigation() {
           {isAuthenticated ? (
             <div className="flex items-center gap-2 ml-4">
               <Link
+                href={tenantHref(`/u/${user?.username}`)}
+                className="text-xs font-mono text-muted-foreground flex items-center gap-1 hover:text-primary"
+              >
+                <User className="w-3 h-3" />
+                {user?.displayName || user?.username}
+              </Link>
+              <Link
+                href={tenantHref("/saved")}
+                className="px-3 py-1 text-[11px] font-mono text-primary border border-primary/20 hover:border-primary hover:bg-primary/10 transition-all clip-path-cyber"
+              >
+                KAYITLAR
+              </Link>
                 href={tenantHref("/saved")}
                 className="px-3 py-1 text-xs font-mono text-primary border border-primary/30 hover:border-primary/60 hover:bg-primary/10"
               >
@@ -248,6 +276,13 @@ export default function Navigation() {
               <Link
                 key={link.name}
                 href={link.href}
+                className="text-lg font-mono text-primary/80 hover:text-white hover:bg-primary/20 p-4 border-l-2 border-transparent hover:border-primary transition-all"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <span className="flex items-center gap-2">
+                  {">"} {link.name}
+                  {link.badge && link.badge > 0 && (
+                    <span className="text-[10px] px-2 py-0.5 bg-primary text-black font-bold">{link.badge}</span>
                 className="text-lg font-mono text-primary/80 hover:text-white hover:bg-primary/20 p-4 border-l-2 border-transparent hover:border-primary transition-all flex items-center gap-2"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
@@ -308,6 +343,22 @@ export default function Navigation() {
                   {user?.displayName || user?.username}
                 </Link>
               </p>
+              <div className="flex flex-col gap-2 px-4">
+                <Link
+                  href={tenantHref(`/u/${user?.username}`)}
+                  className="text-sm font-mono text-primary hover:text-white"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Profilim
+                </Link>
+                <Link
+                  href={tenantHref("/saved")}
+                  className="text-sm font-mono text-primary hover:text-white"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Kaydedilenler
+                </Link>
+              </div>
               <button
                 onClick={() => {
                   handleLogout();

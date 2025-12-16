@@ -13,6 +13,8 @@ type Category = {
     id: string;
     title: string;
     lastActivityAt: string;
+    repliesCount: number;
+  };
     author?: { displayName?: string | null; username: string };
   latestThread?: {
     id: string;
@@ -97,6 +99,17 @@ export default function ForumHome() {
                     <ArrowRight className="w-4 h-4 text-primary" />
                   </div>
                   <p className="text-sm text-muted-foreground mt-2">{category.description}</p>
+                  <p className="text-xs text-muted-foreground mt-3">
+                    {category.lastThread ? (
+                      <span>
+                        Son mesaj: {category.lastThread.title} • {category.lastThread.repliesCount} yanıt •
+                        {" "}
+                        {new Date(category.lastThread.lastActivityAt).toLocaleString("tr-TR")}
+                      </span>
+                    ) : (
+                      <span>Bu kategoride henüz konu yok.</span>
+                    )}
+                  </p>
                   {category.lastThread && (
                     <div className="text-xs text-muted-foreground flex items-center gap-2">
                       <MessageCircle className="w-3 h-3" />

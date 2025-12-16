@@ -1,5 +1,11 @@
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiBasePath, tenantHref } from "@/lib/tenant";
+import { Link } from "wouter";
+import { ArrowLeft, Calendar } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { apiBasePath, tenantHref } from "@/lib/tenant";
 import { Link } from "wouter";
@@ -17,6 +23,9 @@ type Post = {
 };
 
 export default function PostDetail({ postId }: { postId: string }) {
+  const { isAuthenticated } = useAuth();
+  const queryClient = useQueryClient();
+
   const { data, isLoading } = useQuery<{ post: Post }>({
     queryKey: ["post", postId],
     queryFn: async () => {
@@ -26,6 +35,31 @@ export default function PostDetail({ postId }: { postId: string }) {
     },
   });
 
+  const { data: savedData } = useQuery<{ posts: { id: string }[] }>({
+    queryKey: ["saved", "posts"],
+    enabled: isAuthenticated,
+    queryFn: async () => {
+      const res = await fetch(`${apiBasePath}/saved`, { credentials: "include" });
+      if (!res.ok) throw new Error("Kayıtlar alınamadı");
+      return res.json();
+    },
+  });
+
+  const post = data?.post;
+  const isSaved = (savedData?.posts ?? []).some((p) => p.id === post?.id);
+
+  const toggleSave = async () => {
+    if (!post || !isAuthenticated) return;
+    const method = isSaved ? "DELETE" : "POST";
+    await fetch(`${apiBasePath}/saved`, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ targetType: "post", targetId: post.id }),
+    });
+    queryClient.invalidateQueries({ queryKey: ["saved", "posts"] });
+    queryClient.invalidateQueries({ queryKey: ["saved"] });
+  };
   const post = data?.post;
 
   return (
@@ -47,6 +81,19 @@ export default function PostDetail({ postId }: { postId: string }) {
                 <Calendar className="w-4 h-4" />
                 {new Date(post.publishedAt || post.createdAt).toLocaleString("tr-TR")}
               </span>
+              <div className="flex items-center gap-2">
+                {isAuthenticated && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={toggleSave}
+                    className="border-primary/40 text-primary"
+                  >
+                    {isSaved ? "Kaydedildi" : "Kaydet"}
+                  </Button>
+                )}
+                <span className="font-mono px-2 py-1 border border-primary/30 text-primary">{post.status}</span>
+              </div>
               <span className="font-mono px-2 py-1 border border-primary/30 text-primary">{post.status}</span>
             </div>
             <h1 className="text-3xl font-heading font-bold text-white">{post.title}</h1>
