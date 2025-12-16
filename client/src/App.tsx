@@ -17,6 +17,10 @@ import ForumCategory from "@/pages/ForumCategory";
 import ForumThread from "@/pages/ForumThread";
 import Activity from "@/pages/Activity";
 import Notifications from "@/pages/Notifications";
+import Saved from "@/pages/Saved";
+import Profile from "@/pages/Profile";
+import NotificationsPage from "@/pages/Notifications";
+import Notifications from "@/pages/Notifications";
 import Profile from "@/pages/Profile";
 import Saved from "@/pages/Saved";
 import { SiteContentProvider } from "@/lib/site-content";
@@ -42,6 +46,22 @@ function Router() {
       <Route path={`${tenantBasePath}/forum`} component={ForumHome} />
       <Route path={`${tenantBasePath}/activity`} component={Activity} />
       <Route path={`${tenantBasePath}/notifications`} component={Notifications} />
+      <Route path={`${tenantBasePath}/notifications`} component={NotificationsPage} />
+      <Route path={`${tenantBasePath}/saved`} component={Saved} />
+      <Route path={`${tenantBasePath}/u/:username`}>
+        {(params) => <Profile username={params.username} />}
+      </Route>
+      <Route path={`${tenantBasePath}/forum/category/:id`}>
+        {(params) => <ForumCategory categoryId={params.id} />}
+      </Route>
+      <Route path={`${tenantBasePath}/forum/thread/:id`}>
+        {(params) => <ForumThread threadId={params.id} />}
+      </Route>
+      <Route path={`${tenantBasePath}/notifications`}>
+        <RequireAuth>
+          <Notifications />
+        </RequireAuth>
+      </Route>
       <Route path={`${tenantBasePath}/saved`}>
         <RequireAuth>
           <Saved />
@@ -63,8 +83,11 @@ function Router() {
       <Route path={`${tenantBasePath}/posts/:id`}>
         {(params) => <PostDetail postId={params.id} />}
       </Route>
+      <Route path={`${tenantBasePath}/u/:username`}>
+        {(params) => <Profile username={params.username} />}
+      </Route>
       <Route path={`${tenantBasePath}/admin`}>
-        <RequireAuth requiredRoles={["superadmin", "admin", "moderator"]}>
+        <RequireAuth requiredRoles={["superadmin", "admin"]}>
           <Admin />
         </RequireAuth>
       </Route>

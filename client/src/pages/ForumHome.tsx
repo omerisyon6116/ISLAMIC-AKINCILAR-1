@@ -12,6 +12,19 @@ type Category = {
   lastThread?: Thread | null;
   threadsTotal?: number;
   repliesTotal?: number;
+  lastThread?: {
+    id: string;
+    title: string;
+    lastActivityAt: string;
+    repliesCount: number;
+  };
+    author?: { displayName?: string | null; username: string };
+  latestThread?: {
+    id: string;
+    title: string;
+    repliesCount: number;
+    lastActivityAt: string;
+  } | null;
 };
 
 type Thread = {
@@ -81,6 +94,8 @@ export default function ForumHome() {
           <div className="grid md:grid-cols-2 gap-4">
             {categories.map((category) => (
               <Link key={category.id} href={tenantHref(`/forum/category/${category.id}`)}>
+                <div className="border border-primary/30 bg-card/40 p-5 hover:border-primary/60 transition-all cursor-pointer space-y-2">
+                  <div className="flex items-center justify-between gap-2">
                 <div className="border border-primary/30 bg-card/40 p-5 hover:border-primary/60 transition-all cursor-pointer">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xl font-heading text-white">{category.name}</h3>
@@ -95,6 +110,33 @@ export default function ForumHome() {
                     <div className="mt-3 border-t border-white/10 pt-3 text-xs text-foreground flex items-center justify-between">
                       <span className="truncate">Son: {category.lastThread.title}</span>
                       <ArrowRight className="w-3 h-3 text-primary" />
+                  <p className="text-xs text-muted-foreground mt-3">
+                    {category.lastThread ? (
+                      <span>
+                        Son mesaj: {category.lastThread.title} • {category.lastThread.repliesCount} yanıt •
+                        {" "}
+                        {new Date(category.lastThread.lastActivityAt).toLocaleString("tr-TR")}
+                      </span>
+                    ) : (
+                      <span>Bu kategoride henüz konu yok.</span>
+                    )}
+                  </p>
+                  {category.lastThread && (
+                    <div className="text-xs text-muted-foreground flex items-center gap-2">
+                      <MessageCircle className="w-3 h-3" />
+                      <span className="text-white">{category.lastThread.title}</span>
+                      <span>
+                        {category.lastThread.author?.displayName || category.lastThread.author?.username} •
+                        {" "}
+                        {new Date(category.lastThread.lastActivityAt).toLocaleString("tr-TR")}
+                      </span>
+                  {category.latestThread && (
+                    <div className="mt-2 text-xs text-muted-foreground flex items-center gap-2">
+                      <MessageCircle className="w-3 h-3" />
+                      <span className="text-white/80">Son mesaj:</span>
+                      <span className="truncate">{category.latestThread.title}</span>
+                      <span className="h-1 w-1 rounded-full bg-primary/60" />
+                      <span>{new Date(category.latestThread.lastActivityAt).toLocaleString("tr-TR")}</span>
                     </div>
                   )}
                 </div>
