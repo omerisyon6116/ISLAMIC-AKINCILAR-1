@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -239,6 +240,7 @@ export default function Admin() {
     eventDate: payload.eventDate ? new Date(payload.eventDate).toISOString() : undefined,
   });
 
+  const handleAddEvent = async (event: FormEvent<HTMLFormElement>) => {
   const mapPostPayload = (payload: Partial<PostInfo>) => ({
     title: payload.title,
     slug: payload.slug,
@@ -267,6 +269,7 @@ export default function Admin() {
     });
   };
 
+  const handleUpdateEvent = async (event: FormEvent<HTMLFormElement>) => {
   const handleUpdateEvent = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!editingEvent) return;

@@ -99,6 +99,7 @@ export function SiteContentProvider({ children }: { children: React.ReactNode })
     queryFn: async () => {
       const res = await fetch(`${apiBasePath}/site-content`, { credentials: "include" });
       if (!res.ok) {
+        throw new Error("İçerik yüklenemedi");
         return { content: null };
       }
       return res.json();
