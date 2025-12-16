@@ -68,7 +68,7 @@ function Router() {
         {(params) => <PostDetail postId={params.id} />}
       </Route>
       <Route path={`${tenantBasePath}/admin`}>
-        <RequireAuth requiredRoles={["superadmin", "admin", "moderator"]}>
+        <RequireAuth requiredRoles={["superadmin", "admin"]}>
           <Admin />
         </RequireAuth>
       </Route>

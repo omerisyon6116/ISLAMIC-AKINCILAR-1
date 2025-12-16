@@ -501,6 +501,7 @@ export async function registerRoutes(
         latestThread: latestThreads[category.id] || null,
       })),
     });
+    return res.json({ categories });
   });
 
   apiRouter.get("/forum/categories/:categoryId/threads", async (req: Request, res: Response) => {
@@ -670,6 +671,8 @@ export async function registerRoutes(
 
     return res.json({
       thread: { ...threadRow.thread, ...(viewedThread ?? {}), author: threadRow.author, isSubscribed, isSaved },
+    return res.json({
+      thread: { ...threadRow.thread, author: threadRow.author },
       replies: replies.map((row) => ({ ...row.reply, author: row.author })),
       pagination: { page, limit, total },
     });
