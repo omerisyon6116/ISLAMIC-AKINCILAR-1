@@ -1,5 +1,6 @@
 import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
+import ForumShowcase from "@/components/ForumShowcase";
 import About from "@/components/About";
 import ForumShowcase from "@/components/ForumShowcase";
 import Activities from "@/components/Activities";

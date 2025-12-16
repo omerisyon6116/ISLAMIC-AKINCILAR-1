@@ -44,6 +44,30 @@ export default function ForumCategory({ categoryId }: { categoryId: string }) {
 
   const threads = data?.threads ?? [];
 
+  const { data: followData, refetch: refetchFollow } = useQuery<{ follows: { targetId: string }[] }>({
+    queryKey: ["follows", "category", categoryId],
+    queryFn: async () => {
+      const res = await fetch(`${apiBasePath}/follows?targetType=category&targetId=${categoryId}`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Takip bilgisi alınamadı");
+      return res.json();
+    },
+    enabled: isAuthenticated,
+  });
+
+  const isFollowing = Boolean(followData?.follows?.length);
+
+  const toggleFollow = async () => {
+    await fetch(`${apiBasePath}/follows`, {
+      method: isFollowing ? "DELETE" : "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ targetType: "category", targetId: categoryId }),
+    });
+    refetchFollow();
+  };
+
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!title.trim() || !body.trim()) return;
@@ -69,6 +93,20 @@ export default function ForumCategory({ categoryId }: { categoryId: string }) {
         {data && (
           <div className="space-y-2">
             <p className="text-sm font-mono text-primary">FORUM</p>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-3xl font-heading text-white">{data.category.name}</h1>
+              {isAuthenticated && (
+                <Button
+                  variant="outline"
+                  className="border-primary text-primary"
+                  size="sm"
+                  type="button"
+                  onClick={toggleFollow}
+                >
+                  {isFollowing ? "Takip ediliyor" : "Takip et"}
+                </Button>
+              )}
+            </div>
             <h1 className="text-3xl font-heading text-white">{data.category.name}</h1>
             <p className="text-muted-foreground">{data.category.description}</p>
           </div>
@@ -106,6 +144,8 @@ export default function ForumCategory({ categoryId }: { categoryId: string }) {
             <Link key={thread.id} href={tenantHref(`/forum/thread/${thread.id}`)}>
               <div className="border border-primary/20 bg-card/40 p-4 hover:border-primary/60 cursor-pointer flex items-center justify-between">
                 <div className="space-y-1">
+                  <p className="text-white text-lg">{thread.title}</p>
+                  <p className="text-xs text-muted-foreground">{new Date(thread.createdAt).toLocaleString("tr-TR")}</p>
                   <div className="flex items-center gap-2">
                     <p className="text-white text-lg">{thread.title}</p>
                     {thread.repliesCount === 0 && (

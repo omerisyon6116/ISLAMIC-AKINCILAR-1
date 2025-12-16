@@ -9,6 +9,7 @@ import { useSiteContent } from "@/lib/site-content";
 import { useAuth } from "@/lib/auth";
 import { apiBasePath, tenantBasePath, tenantHref } from "@/lib/tenant";
 import { tenantBasePath, tenantHref } from "@/lib/tenant";
+import { useNotifications } from "@/lib/notifications";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
@@ -18,6 +19,7 @@ export default function Navigation() {
   const [showNotifications, setShowNotifications] = useState(false);
   const { content } = useSiteContent();
   const { user, isAuthenticated, logout } = useAuth();
+  const { notifications } = useNotifications();
   const [, setLocation] = useLocation();
 
   const { data: notificationsData } = useQuery<{ notifications: { id: string; isRead: boolean }[] | undefined } | null>({
@@ -75,9 +77,13 @@ export default function Navigation() {
     { name: "SAHA NOTLARI", href: "#blog", type: "anchor" as const },
     { name: "VERİTABANI", href: "#knowledge", type: "anchor" as const },
     { name: "DURUŞ", href: "#energy", type: "anchor" as const },
+    { name: "AKIŞ", href: tenantHref("/activity"), type: "route" as const },
+    { name: "BİLDİRİMLER", href: tenantHref("/notifications"), type: "route" as const },
     { name: "BİLDİRİMLER", href: tenantHref("/notifications"), type: "route" as const, badge: unreadCount },
     { name: "AKIŞ", href: tenantHref("/activity"), type: "route" as const },
   ];
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   return (
     <nav
@@ -104,6 +110,12 @@ export default function Navigation() {
               <Link
                 key={link.name}
                 href={link.href}
+                className="px-6 py-2 text-sm font-medium font-mono text-primary/70 hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/30 transition-all clip-path-cyber flex items-center gap-2"
+              >
+                <span>{link.name}</span>
+                {link.name === "BİLDİRİMLER" && unreadCount > 0 && (
+                  <span className="text-[10px] bg-primary text-black px-2 py-0.5">{unreadCount}</span>
+                )}
                 className="px-6 py-2 text-sm font-medium font-mono text-primary/70 hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/30 transition-all clip-path-cyber"
               >
                 <span className="inline-flex items-center gap-2">
@@ -119,6 +131,7 @@ export default function Navigation() {
                 href={link.href}
                 className="px-6 py-2 text-sm font-medium font-mono text-primary/70 hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/30 transition-all clip-path-cyber"
               >
+                {link.name}
                 <span className="inline-flex items-center gap-2">
                   {link.name}
                   {typeof link.badge === "number" && link.badge > 0 && (
@@ -141,6 +154,11 @@ export default function Navigation() {
           {isAuthenticated ? (
             <div className="flex items-center gap-2 ml-4">
               <Link
+                href={tenantHref("/saved")}
+                className="px-3 py-1 text-xs font-mono text-primary border border-primary/30 hover:border-primary/60 hover:bg-primary/10"
+              >
+                KAYITLAR
+              </Link>
                 href={tenantHref(`/u/${user?.username}`)}
                 className="text-xs font-mono text-muted-foreground flex items-center gap-1 hover:text-primary"
               >
@@ -230,6 +248,13 @@ export default function Navigation() {
               <Link
                 key={link.name}
                 href={link.href}
+                className="text-lg font-mono text-primary/80 hover:text-white hover:bg-primary/20 p-4 border-l-2 border-transparent hover:border-primary transition-all flex items-center gap-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                {">"} {link.name}
+                {link.name === "BİLDİRİMLER" && unreadCount > 0 && (
+                  <span className="text-[10px] bg-primary text-black px-2 py-0.5">{unreadCount}</span>
+                )}
                 className="text-lg font-mono text-primary/80 hover:text-white hover:bg-primary/20 p-4 border-l-2 border-transparent hover:border-primary transition-all"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
@@ -247,6 +272,7 @@ export default function Navigation() {
                 className="text-lg font-mono text-primary/80 hover:text-white hover:bg-primary/20 p-4 border-l-2 border-transparent hover:border-primary transition-all"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
+                {">"} {link.name}
                 <span className="inline-flex items-center gap-2">
                   {">"} {link.name}
                   {typeof link.badge === "number" && link.badge > 0 && (
@@ -269,6 +295,13 @@ export default function Navigation() {
 
           {isAuthenticated ? (
             <div className="pt-4 space-y-2">
+              <Link
+                href={tenantHref("/saved")}
+                className="text-lg font-mono text-primary hover:text-white hover:bg-primary/20 p-4 border-l-2 border-transparent hover:border-primary transition-all"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                {">"} KAYITLAR
+              </Link>
               <p className="text-xs font-mono text-muted-foreground px-4">
                 Giriş yapan: {" "}
                 <Link href={tenantHref(`/u/${user?.username}`)} className="text-primary hover:text-white">

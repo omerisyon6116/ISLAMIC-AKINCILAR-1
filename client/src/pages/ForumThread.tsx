@@ -1,11 +1,14 @@
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiBasePath, tenantHref } from "@/lib/tenant";
 import { apiBasePath } from "@/lib/tenant";
 import { useAuth } from "@/lib/auth";
 import { FormEvent, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { MessageCircle } from "lucide-react";
+import { Link } from "wouter";
 import { MessageCircle, Eye } from "lucide-react";
 
 type ThreadResponse = {
@@ -14,6 +17,9 @@ type ThreadResponse = {
     title: string;
     body: string;
     isLocked: boolean;
+    author?: { displayName?: string | null; username: string };
+    createdAt: string;
+    repliesCount: number;
     repliesCount: number;
     viewsCount: number;
     isSubscribed?: boolean;
@@ -66,6 +72,49 @@ export default function ForumThread({ threadId }: { threadId: string }) {
   const thread = data?.thread;
   const replies = data?.replies ?? [];
 
+  const { data: followData, refetch: refetchFollow } = useQuery<{ follows: { targetId: string }[] }>({
+    queryKey: ["follows", "thread", threadId],
+    queryFn: async () => {
+      const res = await fetch(`${apiBasePath}/follows?targetType=thread&targetId=${threadId}`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Takip bilgisi alınamadı");
+      return res.json();
+    },
+    enabled: isAuthenticated,
+  });
+
+  const { data: savedData, refetch: refetchSaved } = useQuery<{ saved: { targetId: string; targetType: string }[] }>({
+    queryKey: ["saved", "thread", threadId],
+    queryFn: async () => {
+      const res = await fetch(`${apiBasePath}/saved?targetType=thread`, { credentials: "include" });
+      if (!res.ok) throw new Error("Kaydedilenler alınamadı");
+      return res.json();
+    },
+    enabled: isAuthenticated,
+  });
+
+  const isFollowing = Boolean(followData?.follows?.length);
+  const isSaved = Boolean(savedData?.saved?.find((item) => item.targetId === threadId));
+
+  const toggleFollow = async () => {
+    await fetch(`${apiBasePath}/follows`, {
+      method: isFollowing ? "DELETE" : "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ targetType: "thread", targetId: threadId }),
+    });
+    refetchFollow();
+  };
+
+  const toggleSave = async () => {
+    await fetch(`${apiBasePath}/saved`, {
+      method: isSaved ? "DELETE" : "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ targetType: "thread", targetId: threadId }),
+    });
+    refetchSaved();
   const toggleSubscribe = async () => {
     if (!thread) return;
     setTogglingSub(true);
@@ -102,6 +151,28 @@ export default function ForumThread({ threadId }: { threadId: string }) {
       <main className="container mx-auto px-6 py-16 space-y-6">
         {thread && (
           <article className="border border-primary/30 bg-card/40 p-5 space-y-3">
+            <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+              <MessageCircle className="w-4 h-4" />
+              <Link href={tenantHref(`/u/${thread.author?.username}`)} className="text-primary">
+                {thread.author?.displayName || thread.author?.username}
+              </Link>
+              <span>• {new Date(thread.createdAt).toLocaleString("tr-TR")}</span>
+              {thread.repliesCount === 0 && <span className="text-[10px] bg-primary text-black px-2 py-0.5">Cevap bekliyor</span>}
+            </div>
+            <div className="flex items-center gap-3 flex-wrap justify-between">
+              <h1 className="text-3xl font-heading text-white">{thread.title}</h1>
+              {isAuthenticated && (
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" className="border-primary text-primary" onClick={toggleFollow}>
+                    {isFollowing ? "Takipten çık" : "Takip et"}
+                  </Button>
+                  <Button variant="outline" size="sm" className="border-primary text-primary" onClick={toggleSave}>
+                    {isSaved ? "Kaydedildi" : "Kaydet"}
+                  </Button>
+                </div>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{thread.body}</p>
             <div className="text-xs text-muted-foreground flex items-center gap-2">
               <MessageCircle className="w-4 h-4" />
               <span>{thread.author?.displayName || thread.author?.username}</span>
@@ -161,6 +232,9 @@ export default function ForumThread({ threadId }: { threadId: string }) {
             <div key={reply.id} className="border border-primary/20 bg-card/40 p-4 space-y-2">
               <div className="text-xs text-muted-foreground flex items-center gap-2">
                 <MessageCircle className="w-3 h-3" />
+                <Link href={tenantHref(`/u/${reply.author?.username}`)} className="text-primary">
+                  {reply.author?.displayName || reply.author?.username}
+                </Link>
                 <span>{reply.author?.displayName || reply.author?.username}</span>
                 <span>• {new Date(reply.createdAt).toLocaleString("tr-TR")}</span>
               </div>

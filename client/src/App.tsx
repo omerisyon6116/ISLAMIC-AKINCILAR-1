@@ -16,6 +16,7 @@ import ForumHome from "@/pages/ForumHome";
 import ForumCategory from "@/pages/ForumCategory";
 import ForumThread from "@/pages/ForumThread";
 import Activity from "@/pages/Activity";
+import NotificationsPage from "@/pages/Notifications";
 import Notifications from "@/pages/Notifications";
 import Profile from "@/pages/Profile";
 import Saved from "@/pages/Saved";
@@ -41,6 +42,11 @@ function Router() {
       <Route path={`${tenantBasePath}/register`} component={Register} />
       <Route path={`${tenantBasePath}/forum`} component={ForumHome} />
       <Route path={`${tenantBasePath}/activity`} component={Activity} />
+      <Route path={`${tenantBasePath}/notifications`} component={NotificationsPage} />
+      <Route path={`${tenantBasePath}/saved`} component={Saved} />
+      <Route path={`${tenantBasePath}/u/:username`}>
+        {(params) => <Profile username={params.username} />}
+      </Route>
       <Route path={`${tenantBasePath}/forum/category/:id`}>
         {(params) => <ForumCategory categoryId={params.id} />}
       </Route>

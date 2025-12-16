@@ -9,6 +9,11 @@ type Category = {
   id: string;
   name: string;
   description: string | null;
+  lastThread?: {
+    id: string;
+    title: string;
+    lastActivityAt: string;
+    author?: { displayName?: string | null; username: string };
   latestThread?: {
     id: string;
     title: string;
@@ -84,12 +89,23 @@ export default function ForumHome() {
           <div className="grid md:grid-cols-2 gap-4">
             {categories.map((category) => (
               <Link key={category.id} href={tenantHref(`/forum/category/${category.id}`)}>
+                <div className="border border-primary/30 bg-card/40 p-5 hover:border-primary/60 transition-all cursor-pointer space-y-2">
+                  <div className="flex items-center justify-between gap-2">
                 <div className="border border-primary/30 bg-card/40 p-5 hover:border-primary/60 transition-all cursor-pointer">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xl font-heading text-white">{category.name}</h3>
                     <ArrowRight className="w-4 h-4 text-primary" />
                   </div>
                   <p className="text-sm text-muted-foreground mt-2">{category.description}</p>
+                  {category.lastThread && (
+                    <div className="text-xs text-muted-foreground flex items-center gap-2">
+                      <MessageCircle className="w-3 h-3" />
+                      <span className="text-white">{category.lastThread.title}</span>
+                      <span>
+                        {category.lastThread.author?.displayName || category.lastThread.author?.username} •
+                        {" "}
+                        {new Date(category.lastThread.lastActivityAt).toLocaleString("tr-TR")}
+                      </span>
                   {category.latestThread && (
                     <div className="mt-2 text-xs text-muted-foreground flex items-center gap-2">
                       <MessageCircle className="w-3 h-3" />
