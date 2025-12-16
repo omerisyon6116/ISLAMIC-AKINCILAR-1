@@ -2,12 +2,14 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiBasePath, tenantHref } from "@/lib/tenant";
+import { apiBasePath } from "@/lib/tenant";
 import { useAuth } from "@/lib/auth";
 import { FormEvent, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { MessageCircle } from "lucide-react";
 import { Link } from "wouter";
+import { MessageCircle, Eye } from "lucide-react";
 
 type ThreadResponse = {
   thread: {
@@ -18,6 +20,12 @@ type ThreadResponse = {
     author?: { displayName?: string | null; username: string };
     createdAt: string;
     repliesCount: number;
+    repliesCount: number;
+    viewsCount: number;
+    isSubscribed?: boolean;
+    isSaved?: boolean;
+    author?: { displayName?: string | null; username: string };
+    createdAt: string;
   };
   replies: {
     id: string;
@@ -32,6 +40,8 @@ export default function ForumThread({ threadId }: { threadId: string }) {
   const queryClient = useQueryClient();
   const [body, setBody] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [togglingSub, setTogglingSub] = useState(false);
+  const [togglingSave, setTogglingSave] = useState(false);
 
   const { data, isLoading } = useQuery<ThreadResponse>({
     queryKey: ["forum", "thread", threadId],
@@ -105,6 +115,34 @@ export default function ForumThread({ threadId }: { threadId: string }) {
       body: JSON.stringify({ targetType: "thread", targetId: threadId }),
     });
     refetchSaved();
+  const toggleSubscribe = async () => {
+    if (!thread) return;
+    setTogglingSub(true);
+    const method = thread.isSubscribed ? "DELETE" : "POST";
+    const res = await fetch(`${apiBasePath}/forum/threads/${threadId}/subscribe`, {
+      method,
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+    });
+    setTogglingSub(false);
+    if (res.ok) {
+      queryClient.invalidateQueries({ queryKey: ["forum", "thread", threadId] });
+    }
+  };
+
+  const toggleSave = async () => {
+    if (!thread) return;
+    setTogglingSave(true);
+    const method = thread.isSaved ? "DELETE" : "POST";
+    const res = await fetch(`${apiBasePath}/forum/threads/${threadId}/save`, {
+      method,
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+    });
+    setTogglingSave(false);
+    if (res.ok) {
+      queryClient.invalidateQueries({ queryKey: ["forum", "thread", threadId] });
+    }
   };
 
   return (
@@ -135,6 +173,52 @@ export default function ForumThread({ threadId }: { threadId: string }) {
               )}
             </div>
             <p className="text-sm text-muted-foreground whitespace-pre-wrap">{thread.body}</p>
+            <div className="text-xs text-muted-foreground flex items-center gap-2">
+              <MessageCircle className="w-4 h-4" />
+              <span>{thread.author?.displayName || thread.author?.username}</span>
+              <span>• {new Date(thread.createdAt).toLocaleString("tr-TR")}</span>
+            </div>
+            <h1 className="text-3xl font-heading text-white">{thread.title}</h1>
+            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <MessageCircle className="w-3 h-3" /> {thread.repliesCount} yanıt
+              </span>
+              <span className="flex items-center gap-1">
+                <Eye className="w-3 h-3" /> {thread.viewsCount} görüntüleme
+              </span>
+              {thread.repliesCount === 0 && (
+                <span className="text-[11px] text-primary border border-primary/40 px-2 py-0.5">Cevap bekliyor</span>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{thread.body}</p>
+            <div className="flex flex-wrap gap-3">
+              {isAuthenticated ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={toggleSubscribe}
+                    disabled={togglingSub}
+                    className="border-primary/60"
+                  >
+                    {thread.isSubscribed ? "Takipten çık" : "Takip et"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={toggleSave}
+                    disabled={togglingSave}
+                    className="border-primary/60"
+                  >
+                    {thread.isSaved ? "Kaydedildi" : "Kaydet"}
+                  </Button>
+                </>
+              ) : (
+                <p className="text-xs text-muted-foreground">Takip ve kaydetmek için giriş yap.</p>
+              )}
+            </div>
             {thread.isLocked && (
               <p className="text-xs text-destructive">Bu konu kilitli, yanıt gönderilemez.</p>
             )}
@@ -151,6 +235,7 @@ export default function ForumThread({ threadId }: { threadId: string }) {
                 <Link href={tenantHref(`/u/${reply.author?.username}`)} className="text-primary">
                   {reply.author?.displayName || reply.author?.username}
                 </Link>
+                <span>{reply.author?.displayName || reply.author?.username}</span>
                 <span>• {new Date(reply.createdAt).toLocaleString("tr-TR")}</span>
               </div>
               <p className="text-sm text-white whitespace-pre-wrap">{reply.body}</p>

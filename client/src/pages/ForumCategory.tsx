@@ -107,6 +107,7 @@ export default function ForumCategory({ categoryId }: { categoryId: string }) {
                 </Button>
               )}
             </div>
+            <h1 className="text-3xl font-heading text-white">{data.category.name}</h1>
             <p className="text-muted-foreground">{data.category.description}</p>
           </div>
         )}
@@ -145,6 +146,15 @@ export default function ForumCategory({ categoryId }: { categoryId: string }) {
                 <div className="space-y-1">
                   <p className="text-white text-lg">{thread.title}</p>
                   <p className="text-xs text-muted-foreground">{new Date(thread.createdAt).toLocaleString("tr-TR")}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-white text-lg">{thread.title}</p>
+                    {thread.repliesCount === 0 && (
+                      <span className="text-[11px] text-primary border border-primary/40 px-2 py-0.5">Cevap bekliyor</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(thread.createdAt).toLocaleString("tr-TR")} • {thread.repliesCount} yanıt
+                  </p>
                 </div>
                 <div className="text-sm text-primary flex items-center gap-1">
                   {thread.repliesCount} yanıt <ArrowRight className="w-4 h-4" />

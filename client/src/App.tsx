@@ -17,6 +17,7 @@ import ForumCategory from "@/pages/ForumCategory";
 import ForumThread from "@/pages/ForumThread";
 import Activity from "@/pages/Activity";
 import NotificationsPage from "@/pages/Notifications";
+import Notifications from "@/pages/Notifications";
 import Profile from "@/pages/Profile";
 import Saved from "@/pages/Saved";
 import { SiteContentProvider } from "@/lib/site-content";
@@ -52,6 +53,19 @@ function Router() {
       <Route path={`${tenantBasePath}/forum/thread/:id`}>
         {(params) => <ForumThread threadId={params.id} />}
       </Route>
+      <Route path={`${tenantBasePath}/notifications`}>
+        <RequireAuth>
+          <Notifications />
+        </RequireAuth>
+      </Route>
+      <Route path={`${tenantBasePath}/saved`}>
+        <RequireAuth>
+          <Saved />
+        </RequireAuth>
+      </Route>
+      <Route path={`${tenantBasePath}/u/:username`}>
+        {(params) => <Profile username={params.username} />}
+      </Route>
       <Route path={`${tenantBasePath}/events/:id`}>
         {(params) => <EventDetail eventId={params.id} />}
       </Route>
@@ -60,7 +74,7 @@ function Router() {
         {(params) => <PostDetail postId={params.id} />}
       </Route>
       <Route path={`${tenantBasePath}/admin`}>
-        <RequireAuth requiredRoles={["superadmin", "admin", "moderator"]}>
+        <RequireAuth requiredRoles={["superadmin", "admin"]}>
           <Admin />
         </RequireAuth>
       </Route>

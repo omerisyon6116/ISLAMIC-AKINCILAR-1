@@ -10,6 +10,7 @@ import {
   forumThreads,
   forumReplies,
   forumReactions,
+  forumSubscriptions,
   posts,
   events,
   tenantSettings,
@@ -505,6 +506,39 @@ export async function registerRoutes(
     );
 
     return res.json({ categories: categoriesWithActivity });
+    const categoryIds = categories.map((c) => c.id);
+    let latestThreads: Record<string, any> = {};
+
+    if (categoryIds.length > 0) {
+      const latest = await db
+        .select({
+          thread: forumThreads,
+          author: {
+            id: users.id,
+            username: users.username,
+            displayName: users.displayName,
+          },
+        })
+        .from(forumThreads)
+        .leftJoin(users, eq(forumThreads.authorId, users.id))
+        .where(inArray(forumThreads.categoryId, categoryIds))
+        .orderBy(desc(forumThreads.lastActivityAt));
+
+      latestThreads = latest.reduce((acc, row) => {
+        if (!acc[row.thread.categoryId]) {
+          acc[row.thread.categoryId] = { ...row.thread, author: row.author };
+        }
+        return acc;
+      }, {} as Record<string, any>);
+    }
+
+    return res.json({
+      categories: categories.map((category) => ({
+        ...category,
+        latestThread: latestThreads[category.id] || null,
+      })),
+    });
+    return res.json({ categories });
   });
 
   apiRouter.get("/forum/categories/:categoryId/threads", async (req: Request, res: Response) => {
@@ -621,6 +655,11 @@ export async function registerRoutes(
       .update(forumThreads)
       .set({ viewsCount: sql`${forumThreads.viewsCount} + 1` })
       .where(eq(forumThreads.id, threadRow.thread.id));
+    const [viewedThread] = await db
+      .update(forumThreads)
+      .set({ viewsCount: sql`${forumThreads.viewsCount} + 1` })
+      .where(eq(forumThreads.id, threadRow.thread.id))
+      .returning();
 
     const replies = await db
       .select({
@@ -645,6 +684,34 @@ export async function registerRoutes(
     );
     const total = Number((countResult.rows[0] as any).count || 0);
 
+    let isSubscribed = false;
+    let isSaved = false;
+
+    if (req.user) {
+      const [sub] = await db
+        .select()
+        .from(forumSubscriptions)
+        .where(and(eq(forumSubscriptions.threadId, threadRow.thread.id), eq(forumSubscriptions.userId, req.user!.id)))
+        .limit(1);
+      isSubscribed = !!sub;
+
+      const [saved] = await db
+        .select()
+        .from(forumReactions)
+        .where(
+          and(
+            eq(forumReactions.userId, req.user!.id),
+            eq(forumReactions.targetId, threadRow.thread.id),
+            eq(forumReactions.targetType, "thread"),
+            eq(forumReactions.reactionType, "save"),
+          ),
+        )
+        .limit(1);
+      isSaved = !!saved;
+    }
+
+    return res.json({
+      thread: { ...threadRow.thread, ...(viewedThread ?? {}), author: threadRow.author, isSubscribed, isSaved },
     return res.json({
       thread: { ...threadRow.thread, author: threadRow.author },
       replies: replies.map((row) => ({ ...row.reply, author: row.author })),
@@ -821,6 +888,12 @@ export async function registerRoutes(
   apiRouter.get("/forum/highlights", async (req: Request, res: Response) => {
     const baseSelect = {
       thread: forumThreads,
+    const baseSelection = {
+      thread: forumThreads,
+      category: {
+        id: forumCategories.id,
+        name: forumCategories.name,
+      },
       author: {
         id: users.id,
         username: users.username,
@@ -856,6 +929,201 @@ export async function registerRoutes(
       newThreads: newThreads.map((row) => ({ ...row.thread, author: row.author })),
       mostReplied: mostReplied.map((row) => ({ ...row.thread, author: row.author })),
       mostViewed: mostViewed.map((row) => ({ ...row.thread, author: row.author })),
+    const newest = await db
+      .select(baseSelection)
+      .from(forumThreads)
+      .leftJoin(forumCategories, eq(forumThreads.categoryId, forumCategories.id))
+      .leftJoin(users, eq(forumThreads.authorId, users.id))
+      .where(eq(forumThreads.tenantId, req.tenant!.id))
+      .orderBy(desc(forumThreads.createdAt))
+      .limit(8);
+
+    const mostAnswered = await db
+      .select(baseSelection)
+      .from(forumThreads)
+      .leftJoin(forumCategories, eq(forumThreads.categoryId, forumCategories.id))
+      .leftJoin(users, eq(forumThreads.authorId, users.id))
+      .where(eq(forumThreads.tenantId, req.tenant!.id))
+      .orderBy(desc(forumThreads.repliesCount), desc(forumThreads.lastActivityAt))
+      .limit(8);
+
+    const mostViewed = await db
+      .select(baseSelection)
+      .from(forumThreads)
+      .leftJoin(forumCategories, eq(forumThreads.categoryId, forumCategories.id))
+      .leftJoin(users, eq(forumThreads.authorId, users.id))
+      .where(eq(forumThreads.tenantId, req.tenant!.id))
+      .orderBy(desc(forumThreads.viewsCount), desc(forumThreads.lastActivityAt))
+      .limit(8);
+
+    return res.json({
+      newest: newest.map((row) => ({ ...row.thread, category: row.category, author: row.author })),
+      mostAnswered: mostAnswered.map((row) => ({ ...row.thread, category: row.category, author: row.author })),
+      mostViewed: mostViewed.map((row) => ({ ...row.thread, category: row.category, author: row.author })),
+    });
+  });
+
+  apiRouter.post("/forum/threads/:threadId/subscribe", requireAuth, async (req: Request, res: Response) => {
+    const [thread] = await db
+      .select()
+      .from(forumThreads)
+      .where(and(eq(forumThreads.id, req.params.threadId), eq(forumThreads.tenantId, req.tenant!.id)))
+      .limit(1);
+
+    if (!thread) {
+      return res.status(404).json({ message: "Konu bulunamadı" });
+    }
+
+    if (!req.tenantMembership) {
+      return res.status(403).json({ message: "Üyelik gerekli" });
+    }
+
+    await db
+      .insert(forumSubscriptions)
+      .values({ userId: req.user!.id, threadId: thread.id })
+      .onConflictDoNothing();
+
+    return res.json({ subscribed: true });
+  });
+
+  apiRouter.delete("/forum/threads/:threadId/subscribe", requireAuth, async (req: Request, res: Response) => {
+    await db
+      .delete(forumSubscriptions)
+      .where(and(eq(forumSubscriptions.threadId, req.params.threadId), eq(forumSubscriptions.userId, req.user!.id)));
+
+    return res.json({ subscribed: false });
+  });
+
+  apiRouter.post("/forum/threads/:threadId/save", requireAuth, async (req: Request, res: Response) => {
+    const [thread] = await db
+      .select()
+      .from(forumThreads)
+      .where(and(eq(forumThreads.id, req.params.threadId), eq(forumThreads.tenantId, req.tenant!.id)))
+      .limit(1);
+
+    if (!thread) {
+      return res.status(404).json({ message: "Konu bulunamadı" });
+    }
+
+    if (!req.tenantMembership) {
+      return res.status(403).json({ message: "Üyelik gerekli" });
+    }
+
+    await db
+      .insert(forumReactions)
+      .values({
+        userId: req.user!.id,
+        targetId: thread.id,
+        targetType: "thread",
+        reactionType: "save",
+      })
+      .onConflictDoNothing();
+
+    return res.json({ saved: true });
+  });
+
+  apiRouter.delete("/forum/threads/:threadId/save", requireAuth, async (req: Request, res: Response) => {
+    await db
+      .delete(forumReactions)
+      .where(
+        and(
+          eq(forumReactions.userId, req.user!.id),
+          eq(forumReactions.targetId, req.params.threadId),
+          eq(forumReactions.targetType, "thread"),
+          eq(forumReactions.reactionType, "save"),
+        ),
+      );
+
+    return res.json({ saved: false });
+  });
+
+  apiRouter.get("/forum/saved", requireAuth, async (req: Request, res: Response) => {
+    const saved = await db
+      .select({
+        reaction: forumReactions,
+        thread: forumThreads,
+        category: {
+          id: forumCategories.id,
+          name: forumCategories.name,
+        },
+      })
+      .from(forumReactions)
+      .leftJoin(forumThreads, eq(forumReactions.targetId, forumThreads.id))
+      .leftJoin(forumCategories, eq(forumThreads.categoryId, forumCategories.id))
+      .where(
+        and(
+          eq(forumReactions.userId, req.user!.id),
+          eq(forumReactions.targetType, "thread"),
+          eq(forumReactions.reactionType, "save"),
+          eq(forumThreads.tenantId, req.tenant!.id),
+        ),
+      )
+      .orderBy(desc(forumReactions.createdAt));
+
+    return res.json({
+      threads: saved
+        .filter((row) => row.thread)
+        .map((row) => ({ ...row.thread!, category: row.category })),
+    });
+  });
+
+  apiRouter.get("/profiles/:username", async (req: Request, res: Response) => {
+    const [user] = await db
+      .select({
+        id: users.id,
+        username: users.username,
+        displayName: users.displayName,
+        bio: users.bio,
+        avatarUrl: users.avatarUrl,
+        role: users.role,
+        createdAt: users.createdAt,
+      })
+      .from(users)
+      .where(eq(users.username, req.params.username))
+      .limit(1);
+
+    if (!user) {
+      return res.status(404).json({ message: "Kullanıcı bulunamadı" });
+    }
+
+    const [membership] = await db
+      .select()
+      .from(tenantMembers)
+      .where(and(eq(tenantMembers.userId, user.id), eq(tenantMembers.tenantId, req.tenant!.id)))
+      .limit(1);
+
+    if (!membership) {
+      return res.status(404).json({ message: "Kullanıcı bu toplulukta değil" });
+    }
+
+    const threads = await db
+      .select({
+        thread: forumThreads,
+        category: { id: forumCategories.id, name: forumCategories.name },
+      })
+      .from(forumThreads)
+      .leftJoin(forumCategories, eq(forumThreads.categoryId, forumCategories.id))
+      .where(and(eq(forumThreads.authorId, user.id), eq(forumThreads.tenantId, req.tenant!.id)))
+      .orderBy(desc(forumThreads.createdAt))
+      .limit(10);
+
+    const replies = await db
+      .select({
+        reply: forumReplies,
+        thread: forumThreads,
+      })
+      .from(forumReplies)
+      .leftJoin(forumThreads, eq(forumReplies.threadId, forumThreads.id))
+      .where(and(eq(forumReplies.authorId, user.id), eq(forumThreads.tenantId, req.tenant!.id)))
+      .orderBy(desc(forumReplies.createdAt))
+      .limit(10);
+
+    return res.json({
+      user,
+      threads: threads.map((row) => ({ ...row.thread, category: row.category })),
+      replies: replies
+        .filter((row) => row.thread)
+        .map((row) => ({ ...row.reply, thread: row.thread })),
     });
   });
 
